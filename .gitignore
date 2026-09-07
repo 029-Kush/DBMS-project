@@ -1,0 +1,15 @@
+# redundant: this is just a zipped copy of selfheal_pgvector/
+selfheal_pgvector_phase1.zip
+
+# python
+__pycache__/
+*.pyc
+
+# local postgres data lives outside the repo (C:\tools\pgdata) but just in case
+pgdata/
+*.log
+
+# os
+.DS_Store
+Thumbs.db
+desktop.ini
