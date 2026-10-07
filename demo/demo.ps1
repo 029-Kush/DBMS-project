@@ -1,9 +1,11 @@
 <#
-  Runs the Phase 1 demo against the local server started by .\db.ps1 up
+  Runs the self-healing vector database demo against the local server.
 
   Usage:
     .\db.ps1 up            # once, first
     .\demo.ps1 baseline    # load_data + build_canary + eval_recall baseline
+    .\demo.ps1 phase2      # migrate safely + run one observable health check
+    .\demo.ps1 phase3-drift # complete reversible model-drift experiment
     .\demo.ps1 faults      # inject version-skew + index-drop, eval each, restore
     .\demo.ps1 timeline    # print the health_snapshots table
 
@@ -12,7 +14,7 @@
 #>
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet('baseline', 'faults', 'timeline')]
+  [ValidateSet('baseline', 'phase2', 'phase3-drift', 'faults', 'timeline')]
   [string]$Action
 )
 
@@ -24,6 +26,8 @@ $PGBIN   = 'C:\tools\mmroot\envs\pgv\Library\bin'
 $psql    = Join-Path $PGBIN 'psql.exe'
 $PROJ    = Join-Path $PSScriptRoot '..\selfheal_pgvector' | Resolve-Path | Select-Object -ExpandProperty Path
 $SCRIPTS = Join-Path $PROJ 'scripts'
+$PHASE2  = Join-Path $PROJ 'sql\phase2_migration.sql'
+$PHASE3  = Join-Path $PROJ 'sql\phase3_migration.sql'
 
 function Py([string]$file, [string]$arg) {
   Push-Location $SCRIPTS
@@ -50,6 +54,20 @@ switch ($Action) {
     Py 'eval_recall.py' 'baseline'
   }
 
+  'phase2' {
+    Write-Host "`n===== apply additive Phase 2 migration =====" -ForegroundColor Cyan
+    & $psql -h 127.0.0.1 -p 5432 -U svuser -d selfheal -v ON_ERROR_STOP=1 -f $PHASE2
+    Write-Host "`n===== observable health check =====" -ForegroundColor Cyan
+    Py 'monitor.py'
+  }
+
+  'phase3-drift' {
+    Write-Host "`n===== apply additive Phase 3 migration =====" -ForegroundColor Cyan
+    & $psql -h 127.0.0.1 -p 5432 -U svuser -d selfheal -v ON_ERROR_STOP=1 -f $PHASE3
+    Write-Host "`n===== reversible incompatible-embedding experiment =====" -ForegroundColor Cyan
+    Py 'run_phase3_experiment.py'
+  }
+
   'faults' {
     Write-Host "`n### FAULT A: half-finished model migration (1/3 of rows)" -ForegroundColor Yellow
     Q "UPDATE documents SET embedding_model_version='tfidf-svd-v0' WHERE id % 3 = 0;"
@@ -74,6 +92,6 @@ switch ($Action) {
 
   'timeline' {
     Write-Host "`n===== health_snapshots =====" -ForegroundColor Cyan
-    Q "SELECT id, note, recall_at_k AS recall, round(avg_latency_ms::numeric,2) AS avg_ms, round(p95_latency_ms::numeric,2) AS p95_ms, round(version_skew_pct::numeric,1) AS skew_pct, round(dead_tuple_pct::numeric,1) AS dead_pct, recorded_at::timestamp(0) FROM health_snapshots ORDER BY id;"
+    Q "SELECT id, note, health_status AS status, issues, recall_at_k AS recall, round(mean_nn_distance::numeric,4) AS mean_dist, round(distance_shift_pct::numeric,1) AS drift_pct, index_exists, index_used, round(version_skew_pct::numeric,1) AS skew_pct, recorded_at::timestamp(0) FROM health_snapshots ORDER BY id;"
   }
 }

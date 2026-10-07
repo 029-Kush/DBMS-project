@@ -80,7 +80,7 @@ switch ($Action) {
       Write-Host "RUNNING on 127.0.0.1:$PORT"
       Psql-Q "SELECT version();"
       Psql-Q "SELECT extname, extversion FROM pg_extension WHERE extname='vector';"
-      Psql-Q "SELECT 'documents' t, count(*) FROM documents UNION ALL SELECT 'canary_set', count(*) FROM canary_set UNION ALL SELECT 'health_snapshots', count(*) FROM health_snapshots;"
+      Psql-Q "SELECT 'documents' t, count(*) FROM documents UNION ALL SELECT 'canary_set', count(*) FROM canary_set UNION ALL SELECT 'query_log', count(*) FROM query_log UNION ALL SELECT 'health_snapshots', count(*) FROM health_snapshots;"
     }
     else {
       Write-Host "STOPPED  (run: .\db.ps1 up)"

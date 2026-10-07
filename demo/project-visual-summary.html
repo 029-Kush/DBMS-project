@@ -1,0 +1,121 @@
+<div id="svdb-visual">
+  <style>
+    #svdb-visual { color: var(--foreground); display: grid; gap: 22px; }
+    #svdb-visual h1, #svdb-visual h2, #svdb-visual h3 { margin: 0; font-weight: 500; }
+    #svdb-visual .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+    #svdb-visual .stat { min-width: 0; }
+    #svdb-visual .stat .viz-stat-value { color: var(--foreground); }
+    #svdb-visual .flow { display: flex; align-items: stretch; gap: 7px; flex-wrap: wrap; }
+    #svdb-visual .node { flex: 1 1 120px; min-width: 110px; padding: 12px; background: color-mix(in srgb, var(--viz-series-1) 10%, transparent); }
+    #svdb-visual .node strong { display: block; font-weight: 500; }
+    #svdb-visual .node span { color: var(--muted-foreground); }
+    #svdb-visual .arrow { align-self: center; color: var(--muted-foreground); }
+    #svdb-visual .experiment { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
+    #svdb-visual .metric { display: grid; gap: 8px; }
+    #svdb-visual .metric-row { display: grid; grid-template-columns: 70px 1fr 58px; align-items: center; gap: 8px; }
+    #svdb-visual .track { height: 16px; background: color-mix(in srgb, var(--muted) 75%, transparent); overflow: hidden; }
+    #svdb-visual .bar { height: 100%; background: var(--viz-series-1); }
+    #svdb-visual .metric-row.fault .bar { background: var(--red); }
+    #svdb-visual .metric-row.recovered .bar { background: var(--green); }
+    #svdb-visual .status-line { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+    #svdb-visual .status-line > div { padding: 8px; background: var(--muted); }
+    #svdb-visual .status-line .critical { background: color-mix(in srgb, var(--red) 18%, transparent); }
+    #svdb-visual .status-line .recovered { background: color-mix(in srgb, var(--green) 18%, transparent); }
+    #svdb-visual .roadmap { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 7px; }
+    #svdb-visual .phase { padding: 11px; background: var(--muted); min-height: 96px; }
+    #svdb-visual .phase.done { background: color-mix(in srgb, var(--green) 12%, transparent); }
+    #svdb-visual .phase.now { background: color-mix(in srgb, var(--yellow) 18%, transparent); }
+    #svdb-visual .phase.goal { background: color-mix(in srgb, var(--viz-series-1) 14%, transparent); }
+    #svdb-visual .phase strong, #svdb-visual .phase span { display: block; }
+    #svdb-visual .phase span { color: var(--muted-foreground); margin-top: 5px; }
+    #svdb-visual table { width: 100%; }
+    #svdb-visual td.signal { text-align: center; font-weight: 500; }
+    #svdb-visual .yes { color: var(--green); }
+    #svdb-visual .bad { color: var(--red); }
+    #svdb-visual .planned { color: var(--muted-foreground); }
+    @media (max-width: 700px) {
+      #svdb-visual .stats, #svdb-visual .experiment { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      #svdb-visual .roadmap { grid-template-columns: 1fr; }
+      #svdb-visual .arrow { display: none; }
+    }
+    @media (max-width: 430px) {
+      #svdb-visual .stats, #svdb-visual .experiment { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <h1>Self-Healing Vector Database</h1>
+
+  <div class="stats" aria-label="Project scale">
+    <div class="card viz-stat stat"><span class="text-muted">Documents</span><span class="viz-stat-value tabular-nums">480</span><span class="text-small text-muted">6 categories</span></div>
+    <div class="card viz-stat stat"><span class="text-muted">Vector size</span><span class="viz-stat-value tabular-nums">64D</span><span class="text-small text-muted">TF-IDF + SVD</span></div>
+    <div class="card viz-stat stat"><span class="text-muted">Canaries</span><span class="viz-stat-value tabular-nums">12</span><span class="text-small text-muted">Top-10 ground truth</span></div>
+    <div class="card viz-stat stat"><span class="text-muted">Fault impact</span><span class="viz-stat-value tabular-nums">−22.5%</span><span class="text-small text-muted">Recall: 1.000 → 0.775</span></div>
+  </div>
+
+  <section aria-labelledby="flow-title">
+    <h2 id="flow-title">Search pipeline</h2>
+    <div class="flow">
+      <div class="node"><strong>Text</strong><span>query / document</span></div><span class="arrow">→</span>
+      <div class="node"><strong>Embedder</strong><span>TF-IDF + SVD</span></div><span class="arrow">→</span>
+      <div class="node"><strong>Vector(64)</strong><span>semantic coordinates</span></div><span class="arrow">→</span>
+      <div class="node"><strong>pgvector</strong><span>cosine distance</span></div><span class="arrow">→</span>
+      <div class="node"><strong>HNSW</strong><span>fast top-10</span></div><span class="arrow">→</span>
+      <div class="node"><strong>Monitor</strong><span>recall · drift · skew</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="experiment-title">
+    <h2 id="experiment-title">25% incompatible-embedding experiment</h2>
+    <div class="experiment">
+      <div class="metric" aria-label="Recall at 10 comparison">
+        <h3>Recall@10</h3>
+        <div class="metric-row"><span>Before</span><div class="track"><div class="bar" style="width:100%"></div></div><strong>1.000</strong></div>
+        <div class="metric-row fault"><span>Fault</span><div class="track"><div class="bar" style="width:77.5%"></div></div><strong>0.775</strong></div>
+        <div class="metric-row recovered"><span>Restored</span><div class="track"><div class="bar" style="width:100%"></div></div><strong>1.000</strong></div>
+      </div>
+      <div class="metric" aria-label="Nearest-neighbour distance comparison">
+        <h3>Mean NN distance</h3>
+        <div class="metric-row"><span>Before</span><div class="track"><div class="bar" style="width:82.1%"></div></div><strong>0.1675</strong></div>
+        <div class="metric-row fault"><span>Fault</span><div class="track"><div class="bar" style="width:100%"></div></div><strong>0.2040</strong></div>
+        <div class="metric-row recovered"><span>Restored</span><div class="track"><div class="bar" style="width:82.1%"></div></div><strong>0.1675</strong></div>
+      </div>
+      <div class="metric" aria-label="Model version skew comparison">
+        <h3>Version skew</h3>
+        <div class="metric-row"><span>Before</span><div class="track"><div class="bar" style="width:0%"></div></div><strong>0%</strong></div>
+        <div class="metric-row fault"><span>Fault</span><div class="track"><div class="bar" style="width:100%"></div></div><strong>25%</strong></div>
+        <div class="metric-row recovered"><span>Restored</span><div class="track"><div class="bar" style="width:0%"></div></div><strong>0%</strong></div>
+      </div>
+    </div>
+    <div class="status-line" aria-label="Health state progression">
+      <div>WARNING<br><span class="text-small">tiny-table scan</span></div>
+      <div class="critical">CRITICAL<br><span class="text-small">recall + drift + skew</span></div>
+      <div class="recovered">RECOVERED<br><span class="text-small">exact vectors restored</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="roadmap-title">
+    <h2 id="roadmap-title">Roadmap</h2>
+    <div class="roadmap">
+      <div class="phase done"><strong>1 · Baseline ✓</strong><span>Postgres · pgvector · HNSW · recall@10</span></div>
+      <div class="phase done"><strong>2 · Observe ✓</strong><span>query logs · distance drift · explicit status</span></div>
+      <div class="phase now"><strong>3 · Fault lab</strong><span>1/4 complete · embeddings ✓ · index · noise · bloat</span></div>
+      <div class="phase"><strong>4 · Repair</strong><span>re-embed · recreate index · vacuum</span></div>
+      <div class="phase goal"><strong>5 · End goal</strong><span>detect → diagnose → repair → verify</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="matrix-title">
+    <h2 id="matrix-title">Fault → signal → action</h2>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Fault</th><th class="text-center">Recall</th><th class="text-center">Distance</th><th class="text-center">Skew</th><th class="text-center">Index</th><th>Repair</th></tr></thead>
+        <tbody>
+          <tr><td>Incompatible embeddings</td><td class="signal bad">↓</td><td class="signal bad">↑</td><td class="signal bad">25%</td><td class="signal">—</td><td>Re-embed stale rows</td></tr>
+          <tr><td>Vector noise</td><td class="signal planned">↓</td><td class="signal planned">↑</td><td class="signal planned">0%</td><td class="signal">—</td><td>Re-embed corrupted rows</td></tr>
+          <tr><td>Missing HNSW</td><td class="signal planned">≈</td><td class="signal planned">≈</td><td class="signal">—</td><td class="signal planned">missing</td><td>Recreate index</td></tr>
+          <tr><td>Table bloat</td><td class="signal planned">≈</td><td class="signal planned">≈</td><td class="signal">—</td><td class="signal">—</td><td>VACUUM ANALYZE</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

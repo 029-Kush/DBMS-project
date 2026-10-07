@@ -1,0 +1,6 @@
+our project is a self healing database build on postgres. What we're trying to do is that whenever the user updates their data there is some degrading happeneing, and there are existing solutions to it but they're not very efficient since the person in charge has to go through the database manually whereas in our project when the data is going through the process of repairing, a background program would keep doing this automatically.
+
+		Check database → find problem → choose fix → fix it → check again
+
+
+Some data was labeled in a 3 bit binary and some data model was using a 2 bit binary, so the database is comparing mismatched fingerprints and The data is fine, but the shortcut used to search it is missing or outdated, so vector search becomes slower or worse.
