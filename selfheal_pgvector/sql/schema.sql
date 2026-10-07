@@ -31,8 +31,11 @@ CREATE TABLE query_log (
     result_ids      BIGINT[],
     result_distances FLOAT8[],
     latency_ms      FLOAT8,
+    source          TEXT NOT NULL DEFAULT 'user',
     queried_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX query_log_queried_at_idx ON query_log (queried_at DESC);
 
 -- Fixed canary set: query -> the doc ids we expect back, decided at
 -- baseline time when the corpus and embedding model are known-good.
@@ -54,8 +57,46 @@ CREATE TABLE health_snapshots (
     avg_latency_ms      FLOAT8,
     p95_latency_ms      FLOAT8,
     mean_nn_distance    FLOAT8,
+    p95_nn_distance     FLOAT8,
+    distance_shift_pct  FLOAT8,
     version_skew_pct    FLOAT8,
     dead_tuple_pct      FLOAT8,
+    index_exists        BOOLEAN,
+    index_used          BOOLEAN,
+    health_status       TEXT,
+    issues              TEXT[] NOT NULL DEFAULT '{}',
     note                TEXT,
     recorded_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX health_snapshots_recorded_at_idx
+    ON health_snapshots (recorded_at DESC);
+
+-- Phase 3: reversible fault-experiment audit trail and exact vector backups.
+CREATE TABLE fault_runs (
+    id                          BIGSERIAL PRIMARY KEY,
+    fault_type                  TEXT NOT NULL,
+    parameters                  JSONB NOT NULL DEFAULT '{}',
+    status                      TEXT NOT NULL DEFAULT 'ACTIVE'
+                                CHECK (status IN ('ACTIVE', 'RESTORED', 'FAILED')),
+    affected_rows               INT NOT NULL DEFAULT 0,
+    pre_fault_snapshot_id       BIGINT REFERENCES health_snapshots(id),
+    degraded_snapshot_id        BIGINT REFERENCES health_snapshots(id),
+    recovered_snapshot_id       BIGINT REFERENCES health_snapshots(id),
+    started_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    restored_at                 TIMESTAMPTZ,
+    error_message               TEXT
+);
+
+CREATE UNIQUE INDEX one_active_fault_run
+    ON fault_runs ((status)) WHERE status = 'ACTIVE';
+
+CREATE TABLE fault_embedding_backups (
+    run_id                      BIGINT NOT NULL REFERENCES fault_runs(id) ON DELETE CASCADE,
+    document_id                 BIGINT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    embedding                   VECTOR(64) NOT NULL,
+    embedding_model_version     TEXT NOT NULL,
+    PRIMARY KEY (run_id, document_id)
+);
+
+CREATE INDEX fault_runs_started_at_idx ON fault_runs (started_at DESC);

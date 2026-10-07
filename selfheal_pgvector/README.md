@@ -1,12 +1,14 @@
-# Self-Healing Vector Databases — Phase 1: Baseline
+# Self-Healing Vector Databases — Phases 1–2
 
 Database Systems Lab (BCSE302P) — Kush Gupta, Arnav Tiwari
 
-## What this phase delivers
+## What the project currently delivers
 
-A real pgvector instance, loaded with real vectors, with a verified
-recall@k baseline — the clean starting point that Phase 3's fault
-injector will degrade and Phases 4–5 will have to detect and repair.
+A real pgvector instance loaded with real vectors, a verified recall@k
+baseline, and a continuous observability layer that logs searches, tracks
+nearest-neighbour distance distributions, checks model consistency and index
+state, and stores an explainable health status over time. This is the measured
+starting point that Phase 3 will degrade and Phases 4–5 will repair.
 
 ## Setup (reproducing from scratch)
 
@@ -46,7 +48,16 @@ python3 eval_recall.py baseline
 | `scripts/embed_model.py` | The embedding model — TF-IDF + Truncated SVD, 64 dims |
 | `scripts/load_data.py` | Fits the embedding model on the corpus and loads vectors into pgvector with an HNSW index |
 | `scripts/build_canary.py` | Builds the fixed canary set: 12 hand-written probe queries, one expected top-10 per query, taken from the healthy baseline |
-| `scripts/eval_recall.py` | Runs the canary set, computes recall@10, latency, version skew, dead-tuple ratio, and logs a row to `health_snapshots` |
+| `scripts/search.py` | Shared observable search: embeds, searches, measures, and logs each query |
+| `scripts/query.py` | Command-line user search that writes to `query_log` |
+| `scripts/eval_recall.py` | Computes recall, latency, distance drift, version skew, dead tuples, index state, status, and issues |
+| `scripts/monitor.py` | Runs the health check once or continuously on an interval |
+| `scripts/inject_fault.py` | Transactional fault injection with exact vector backup and restoration |
+| `scripts/run_phase3_experiment.py` | Complete baseline → fault → restore → verify experiment |
+| `sql/phase2_migration.sql` | Idempotent, additive Phase 2 migration that preserves Phase 1 data |
+| `sql/phase3_migration.sql` | Fault-run audit trail and per-document embedding backups |
+| `PHASE2.md` | Phase 2 design, thresholds, operation, and definition of done |
+| `PHASE3.md` | Fault design, safety model, measured results, and remaining experiments |
 
 ## A note on the embedding model
 
@@ -78,8 +89,40 @@ same category as their query (the one exception is a food query
 returning one health-related document — a reasonable overlap, not a
 labeling bug).
 
-## Next (Phase 2)
+## Phase 2 commands
 
-Turn `eval_recall.py` into a scheduled job (pg_cron or a loop) and add
-distance-distribution tracking so drift shows up as a distributional
-shift, not just a recall drop.
+```powershell
+# From demo\
+.\db.ps1 up
+.\demo.ps1 phase2
+.\demo.ps1 timeline
+
+# Observable user search, from selfheal_pgvector\scripts\
+$env:MAMBA_ROOT_PREFIX = 'C:\tools\mmroot'
+& C:\tools\micromamba.exe run -n pgv python query.py `
+  "a smartphone update that improves battery performance" --top-k 5
+
+# Continuous monitor: check every five minutes
+& C:\tools\micromamba.exe run -n pgv python monitor.py --interval 300
+```
+
+For this 480-row corpus PostgreSQL may prefer a sequential scan even though the
+HNSW index exists, because scanning the tiny table is cheaper. Phase 2 records
+this as `WARNING: INDEX_NOT_USED`, not as database damage. A larger Phase 3
+competition dataset will make the HNSW performance distinction measurable.
+
+## Phase 3: first real fault experiment
+
+```powershell
+# From demo\: runs baseline → injection → measurement → exact restore → verify
+.\demo.ps1 phase3-drift
+```
+
+The implemented incompatible-embedding experiment changes 25% of the actual
+vectors. In the verified run, recall@10 fell from 1.000 to 0.775 and mean
+nearest-neighbour distance shifted by +21.8%; exact restoration returned both
+metrics to baseline. See `PHASE3.md` for the complete result table.
+
+Next Phase 3 experiments are controlled vector noise, HNSW index removal, and
+intentional row churn. Phase 4 will consume the resulting fault-to-signal map
+to select repairs automatically.

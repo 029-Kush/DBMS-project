@@ -4,6 +4,29 @@ selfheal_pgvector_phase1.zip
 # python
 __pycache__/
 *.pyc
+.venv/
+venv/
+
+# secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+
+# frontend/backend generated files
+node_modules/
+dist/
+build/
+staticfiles/
+media/
+
+# database backups
+backups/
+*.dump
+*.backup
 
 # local postgres data lives outside the repo (C:\tools\pgdata) but just in case
 pgdata/
@@ -13,3 +36,4 @@ pgdata/
 .DS_Store
 Thumbs.db
 desktop.ini
+~$*
