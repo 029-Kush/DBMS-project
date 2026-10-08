@@ -6,14 +6,15 @@ DB_DSN = os.environ.get(
 )
 
 # Embedder presets: name -> (dimension, model-version label stored per row).
-# 'tfidf' is the original offline baseline; the other two are real 384-d
-# transformer models run locally through fastembed (ONNX).
+# 'minilm' is the default: a real 384-d transformer run locally through
+# fastembed (ONNX). 'bge' is the other real model; 'tfidf' is the original
+# offline 64-d baseline (no model download needed).
 EMBEDDER_PRESETS = {
     "tfidf": (64, "tfidf-svd-v1"),
     "bge": (384, "bge-small-en-v1.5"),
     "minilm": (384, "all-MiniLM-L6-v2"),
 }
-EMBEDDER = os.environ.get("SELFHEAL_EMBEDDER", "tfidf")
+EMBEDDER = os.environ.get("SELFHEAL_EMBEDDER", "minilm")
 if EMBEDDER not in EMBEDDER_PRESETS:
     raise SystemExit(f"SELFHEAL_EMBEDDER must be one of {sorted(EMBEDDER_PRESETS)}")
 EMBED_DIM, CURRENT_MODEL_VERSION = EMBEDDER_PRESETS[EMBEDDER]

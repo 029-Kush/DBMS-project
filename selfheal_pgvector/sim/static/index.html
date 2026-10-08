@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VectorSpace — self-healing simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --card:rgba(20,20,23,.88); --raise:#1E1E22; --line:#2A2A2E; --line2:#3F3F46;
+    --t1:#FAFAFA; --t2:#B4B4BC; --t3:#75757D;
+    --accent:#5B8DEF; --accent-bg:rgba(91,141,239,.14); --amber:#ffb960; --ok:#34D399; --bad:#FB7185;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace; --panel:340px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000;color:var(--t1);font-family:var(--sans);font-size:14px;overflow:hidden;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit}
+  .num{font-family:var(--mono);font-feature-settings:"tnum","zero"}
+  canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+  .grid{position:absolute;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:32px 32px}
+  .glass{background:var(--card);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);box-shadow:0 14px 40px rgba(0,0,0,.55)}
+
+  #brand{position:absolute;z-index:30;top:18px;left:18px;display:flex;align-items:center;gap:10px;height:40px;padding:0 16px 0 14px;border-radius:20px;font-size:13px;color:var(--t2)}
+  #brand b{color:var(--t1);font-weight:600;letter-spacing:-.01em}
+  #brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  #brand .sb{font-size:11px;color:var(--amber);border:1px solid rgba(255,185,96,.3);background:rgba(255,185,96,.08);padding:2px 9px;border-radius:999px}
+
+  #panel{position:absolute;z-index:30;top:16px;right:16px;bottom:16px;width:var(--panel);display:flex;flex-direction:column;border-radius:20px;overflow:hidden}
+  .sec{padding:16px 20px 4px;font-size:12px;font-weight:600;color:var(--t2);display:flex;justify-content:space-between;align-items:center}
+  .sec span{font-weight:400;color:var(--t3)}
+  .chip{display:inline-flex;align-items:center;height:22px;padding:0 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);color:var(--t2);background:rgba(255,255,255,.04)}
+  .chip.ok{color:var(--ok);border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.08)}
+  .chip.warn{color:var(--amber);border-color:rgba(255,185,96,.3);background:rgba(255,185,96,.08)}
+  .chip.bad{color:var(--bad);border-color:rgba(251,113,133,.3);background:rgba(251,113,133,.08)}
+  #gauges{padding:6px 20px 8px}
+  .g{margin:10px 0}
+  .g .t{display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:5px} .g .t span:last-child{font-family:var(--mono);color:var(--t1)}
+  .g .b{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden} .g .b div{height:5px;border-radius:3px;background:var(--accent);transition:width .6s,background .3s}
+  .g.bad .b div{background:var(--bad)} .g.ok .b div{background:var(--ok)}
+  #issues{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:22px}
+  #stages{padding:6px 20px 6px}
+  .stg{position:relative;display:flex;gap:12px;padding:6px 0 12px}
+  .stg:not(:last-child)::before{content:"";position:absolute;left:7px;top:22px;bottom:-2px;width:1.5px;background:var(--line2)}
+  .stg .d{flex:none;width:16px;height:16px;border-radius:50%;margin-top:2px;background:#27272A;border:2px solid var(--line2);transition:all .3s}
+  .stg .n{font-size:13px;color:var(--t3)} .stg .s{font-size:12px;color:var(--t3);margin-top:2px;line-height:1.4}
+  .stg.run .d{border-color:var(--accent);background:var(--accent-bg);animation:pulse 1.1s ease-in-out infinite} .stg.run .n{color:var(--t1)}
+  .stg.done .d{background:var(--accent);border-color:var(--accent)} .stg.done .n{color:var(--t1)} .stg.done .s{color:var(--t2)}
+  .stg.skip .d{border-style:dashed} .stg.skip .n{color:var(--t3)}
+  @keyframes pulse{50%{box-shadow:0 0 0 5px rgba(91,141,239,.2)}}
+  #log{flex:1;overflow-y:auto;padding:0 20px 14px;min-height:60px}
+  #log::-webkit-scrollbar{width:5px} #log::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .ev{font-size:12px;line-height:1.5;color:var(--t2);padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .ev time{font:10px var(--mono);color:var(--t3);margin-right:8px} .ev.warn{color:var(--amber)} .ev.bad{color:var(--bad)} .ev.ok{color:var(--ok)}
+
+  #dock{position:absolute;z-index:30;left:18px;bottom:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;max-width:calc(100% - var(--panel) - 60px)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pillbar{display:flex;gap:2px;padding:4px;border-radius:999px}
+  .pillbar button{border:0;background:transparent;color:var(--t3);font-size:12px;padding:6px 12px;border-radius:999px;cursor:pointer}
+  .pillbar button:hover{color:var(--t1)} .pillbar button.on{background:rgba(255,255,255,.09);color:var(--t1)}
+  .btn{height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:rgba(22,22,25,.9);color:var(--t1);font-size:13px;font-weight:500;cursor:pointer;backdrop-filter:blur(10px)}
+  .btn:hover{border-color:var(--line2)} .btn:disabled{opacity:.4;cursor:default}
+  .btn.p{background:var(--accent);border-color:var(--accent);color:#fff} .btn.p:hover{background:#4F7DD7}
+  .btn.f{border-color:rgba(251,113,133,.35);color:var(--bad)}
+  .tog{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;font-size:13px;color:var(--t2);cursor:pointer;user-select:none}
+  .sw{width:30px;height:18px;border-radius:9px;background:#3F3F46;position:relative;transition:background .2s} .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+  .tog.on .sw{background:var(--accent)} .tog.on .sw::after{transform:translateX(12px)}
+  .hint{font-size:12px;color:var(--t3);padding-left:4px;max-width:520px;line-height:1.5}
+  #busy{position:absolute;z-index:35;left:calc((100% - 372px)/2);bottom:150px;transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:9px 18px;border-radius:999px;font-size:13px;color:var(--t1)}
+  #busy i{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.15);border-top-color:var(--accent);animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #legend{position:absolute;z-index:25;left:18px;top:70px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--t3)}
+  #legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:-1px}
+  #tip{position:absolute;z-index:40;pointer-events:none;display:none;max-width:280px;background:var(--raise);border:1px solid var(--line2);border-radius:10px;padding:7px 11px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  #tip i{display:block;font-style:normal;font-size:11px;color:var(--t3);margin-top:2px}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas><div class="grid"></div><div id="tip"></div>
+
+<div id="brand" class="glass"><span class="dot"></span><b>Self-healing simulator</b><span class="sb" id="sb">sandbox</span></div>
+<div id="busy" class="glass"><i></i><span id="busy-t">Working…</span></div>
+<div id="legend"></div>
+
+<aside id="panel" class="glass">
+  <div class="sec">Database health <span id="hstat"></span></div>
+  <div id="gauges">
+    <div class="g" id="g1"><div class="t"><span>Search quality (canary recall)</span><span id="v1">–</span></div><div class="b"><div id="b1" style="width:0"></div></div></div>
+    <div class="g" id="g2"><div class="t"><span>Rows that don't match their text</span><span id="v2">–</span></div><div class="b"><div id="b2" style="width:0"></div></div></div>
+    <div class="g" id="g3"><div class="t"><span>Index accuracy (vs exact)</span><span id="v3">–</span></div><div class="b"><div id="b3" style="width:0"></div></div></div>
+    <div id="issues"></div>
+  </div>
+  <div class="sec">Healer <span id="hsec"></span></div>
+  <div id="stages">
+    <div class="stg" id="st1"><span class="d"></span><div><div class="n">Check</div><div class="s">Measure quality, sample rows against their text</div></div></div>
+    <div class="stg" id="st2"><span class="d"></span><div><div class="n">Diagnose</div><div class="s">Pick the fix from the evidence</div></div></div>
+    <div class="stg" id="st3"><span class="d"></span><div><div class="n">Repair</div><div class="s">Re-embed only the bad rows from their text</div></div></div>
+    <div class="stg" id="st4"><span class="d"></span><div><div class="n">Verify</div><div class="s">Re-check, or roll back if it did not help</div></div></div>
+  </div>
+  <div class="sec">Activity <span id="cnt"></span></div>
+  <div id="log"></div>
+</aside>
+
+<div id="dock">
+  <div class="hint" id="hint">Add new documents and watch the map reorganise. Then try a faulty batch.</div>
+  <div class="row">
+    <div class="pillbar glass" id="topics"><button data-t="" class="on">Any topic</button><button data-t="world">World</button><button data-t="sports">Sports</button><button data-t="business">Business</button><button data-t="scitech">Sci/Tech</button></div>
+  </div>
+  <div class="row">
+    <button class="btn p" id="add100">+ 100 documents</button>
+    <button class="btn" id="add300">+ 300</button>
+    <button class="btn f" id="bad300">+ 300 with the wrong embedder</button>
+    <button class="btn" id="heal">Run healer</button>
+    <div class="tog glass" id="auto"><span class="sw"></span>Auto-heal</div>
+    <button class="btn" id="reset">Reset</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0; function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; } addEventListener('resize', resize); resize();
+const TOPIC = { world:'#8DA2C8', sports:'#8BB59B', business:'#C9A56B', scitech:'#B592C9' };
+const NAMES = { world:'World', sports:'Sports', business:'Business', scitech:'Sci/Tech' };
+
+/* ---- scene ---- */
+let N = 0, X = [], Y = [], Z = [], CAT = [], TITLE = [], ID = [], FLAG = [], BORN = [];   // FLAG 0 ok, 1 new, 2 flagged, 3 repaired
+const MOVES = [], EDGES = [];   // moves: {n, from, to, t0}; edges: {a, b, t0, dur, kind}
+let topic = '', autoHeal = false, busy = false, META = {}, lastHealth = null;
+const now0 = () => performance.now();
+
+const CAM0 = { z:-640, rotX:.2, rotY:-.4 };
+const cam = { z:CAM0.z, rotX:CAM0.rotX, rotY:CAM0.rotY, tX:CAM0.rotX, tY:CAM0.rotY, fov:820 };
+let drag = false, px = 0, py = 0, mouse = {x:0,y:0};
+cv.addEventListener('mousedown', e => { drag = true; px = e.clientX; py = e.clientY; });
+addEventListener('mouseup', () => drag = false);
+addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; if (drag){ cam.tY += (e.clientX-px)*.004; cam.tX += (e.clientY-py)*.004; px = e.clientX; py = e.clientY; } });
+cv.addEventListener('wheel', e => { cam.z = Math.min(-260, Math.max(-1600, cam.z + e.deltaY*.6)); }, {passive:true});
+function proj(x,y,z){
+  const cy = Math.cos(cam.rotY), sy = Math.sin(cam.rotY), x1 = x*cy - z*sy, z1 = z*cy + x*sy;
+  const c = Math.cos(cam.rotX), s = Math.sin(cam.rotX), y2 = y*c - z1*s, z2 = z1*c + y*s;
+  const d = z2 - cam.z; if (d <= 20) return null; const k = cam.fov/d;
+  return { x:x1*k + (W - 372)/2, y:y2*k + H/2 - 30, s:k };
+}
+const P = n => proj(X[n], Y[n], Z[n]);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => n.toLocaleString('en-US');
+const ease = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+
+function addPoint(i, x, y, z, cat, title, id, flag, born){ X[i]=x; Y[i]=y; Z[i]=z; CAT[i]=cat; TITLE[i]=title; ID[i]=id; FLAG[i]=flag; BORN[i]=born; N = Math.max(N, i+1); }
+function loadState(s){
+  N = 0; EDGES.length = 0; MOVES.length = 0;
+  s.xyz.forEach((p,i) => addPoint(i, p[0], p[1], p[2], s.category[i], s.title[i], s.ids[i], s.flag[i], -1e9));
+  META = s; $('sb').textContent = 'sandbox · ' + s.sandbox;
+  $('legend').innerHTML = Object.entries(TOPIC).map(([k,c]) => `<div><i style="background:${c}"></i>${NAMES[k]}</div>`).join('') +
+    `<div><i style="background:transparent;border:2px solid var(--amber)"></i>new, not yet verified</div><div><i style="background:var(--bad)"></i>found corrupted</div>`;
+  updateCounts();
+}
+function updateCounts(){ $('cnt').textContent = `${fmt(N)} documents · ${FLAG.filter(f => f === 1).length} new`; }
+
+/* ---- drawing ---- */
+function frame(t){
+  requestAnimationFrame(frame);
+  cam.rotX += (cam.tX-cam.rotX)*.08; cam.rotY += (cam.tY-cam.rotY)*.08; if (!drag && !busy && !MOVES.length && !EDGES.length) cam.tY += .00025;   // rotate only when idle, so animations stay readable
+  ctx.clearRect(0,0,W,H);
+  // moves
+  for (let i = MOVES.length-1; i >= 0; i--){
+    const m = MOVES[i], k = Math.min(1, Math.max(0, (t - m.t0)/1800));
+    if (k <= 0) continue;
+    const e = ease(k); X[m.n] = m.from[0] + (m.to[0]-m.from[0])*e; Y[m.n] = m.from[1] + (m.to[1]-m.from[1])*e; Z[m.n] = m.from[2] + (m.to[2]-m.from[2])*e;
+    if (k >= 1){ FLAG[m.n] = 3; BORN[m.n] = t; MOVES.splice(i,1); }
+  }
+  const pts = new Array(N);
+  for (let n = 0; n < N; n++){
+    const p = P(n); pts[n] = p; if (!p || BORN[n] > t) continue;
+    const f = FLAG[n], age = (t - BORN[n]), pop = f === 1 && age < 500 ? 1 + 2.2*(1 - age/500) : 1;
+    let col = TOPIC[CAT[n]] || '#ddd', a = Math.min(.85, .38*p.s*1.6);
+    if (f === 2){ col = '#FB7185'; a = .95; }
+    const r = Math.max(.9, 1.8*p.s*pop);
+    ctx.globalAlpha = a; ctx.fillStyle = col; ctx.fillRect(p.x-r/2, p.y-r/2, r, r);
+    if (f === 1 || f === 2 || (f === 3 && age < 6000)){
+      ctx.globalAlpha = f === 3 ? .8*(1 - age/6000) : .9; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(3, 4*p.s), 0, 6.2832);
+      ctx.strokeStyle = f === 1 ? '#ffb960' : f === 2 ? '#FB7185' : '#5B8DEF'; ctx.lineWidth = 1.2; ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  // flight trails
+  MOVES.forEach(m => { const a = proj(m.from[0],m.from[1],m.from[2]), b = P(m.n); if (a && b){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.strokeStyle = 'rgba(251,113,133,.25)'; ctx.lineWidth = 1; ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]); } });
+  // edge flashes: new links (blue), neighbour lists that changed (pulse), links pruned (red)
+  for (let i = EDGES.length-1; i >= 0; i--){
+    const e = EDGES[i], k = (t - e.t0)/e.dur; if (k > 1){ EDGES.splice(i,1); continue; } if (k < 0) continue;
+    const a = pts[e.a], b = pts[e.b]; if (!a || !b) continue;
+    if (e.kind === 'touch'){ ctx.beginPath(); ctx.arc(b.x, b.y, 3 + 12*k, 0, 6.2832); ctx.strokeStyle = `rgba(91,141,239,${.5*(1-k)})`; ctx.lineWidth = 1; ctx.stroke(); continue; }
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = e.kind === 'link' ? `rgba(120,165,255,${.75*(1-k)})` : `rgba(251,113,133,${.55*(1-k)})`; ctx.lineWidth = e.kind === 'link' ? 1.1 : .8; ctx.stroke();
+  }
+  // hover tip
+  let best = -1, bd = 90; if (!drag) for (let n = 0; n < N; n++){ const p = pts[n]; if (!p) continue; const d = (p.x-mouse.x)**2 + (p.y-mouse.y)**2; if (d < bd){ bd = d; best = n; } }
+  const tip = $('tip');
+  if (best >= 0 && mouse.x < W - 360){ tip.style.display = 'block'; tip.style.left = (mouse.x+14)+'px'; tip.style.top = (mouse.y+14)+'px';
+    tip.innerHTML = esc(TITLE[best]) + `<i>${NAMES[CAT[best]] || CAT[best]} · document #${ID[best]}${FLAG[best] === 1 ? ' · new, unverified' : ''}</i>`; } else tip.style.display = 'none';
+}
+
+/* ---- panel helpers ---- */
+const logEl = $('log');
+function log(msg, cls){ const d = document.createElement('div'); d.className = 'ev ' + (cls||''); d.innerHTML = `<time>${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</time>${msg}`; logEl.prepend(d); }
+function setBusy(msg){ busy = !!msg; $('busy').style.display = msg ? 'flex' : 'none'; if (msg) $('busy-t').textContent = msg; ['add100','add300','bad300','heal','reset'].forEach(i => $(i).disabled = busy); }
+function gauge(id, val, text, cls){ $('v'+id).textContent = text; $('b'+id).style.width = Math.max(2, Math.min(100, val*100)) + '%'; $('g'+id).className = 'g ' + (cls||''); }
+function showHealth(h){
+  if (!h) return; lastHealth = h;
+  $('hstat').innerHTML = `<span class="chip ${h.status === 'HEALTHY' ? 'ok' : h.status === 'CRITICAL' ? 'bad' : 'warn'}">${h.status.toLowerCase()}</span>`;
+  gauge(1, h.recall, h.recall.toFixed(2), h.recall >= .95 ? 'ok' : 'bad');
+  const s = h.sentinel ?? 0; gauge(2, Math.min(1, s/20), s.toFixed(1) + '%', s > 0 ? 'bad' : 'ok');
+  gauge(3, h.ann ?? 1, (h.ann ?? 1).toFixed(2), (h.ann ?? 1) >= .95 ? 'ok' : 'bad');
+  $('issues').innerHTML = h.issues.map(i => `<span class="chip bad">${i.replace(/_/g,' ').toLowerCase()}</span>`).join('') || '<span class="chip ok">no issues found</span>';
+}
+function stage(i, state, text){ const el = $('st'+i); el.className = 'stg ' + (state||''); if (text) el.querySelector('.s').textContent = text; }
+function resetStages(){ const t = ['Measure quality, sample rows against their text','Pick the fix from the evidence','Re-embed only the bad rows from their text','Re-check, or roll back if it did not help']; for (let i = 1; i <= 4; i++) stage(i, '', t[i-1]); }
+async function api(path, body){ const r = await fetch(path, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body||{}) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || j.detail || r.status); return j; }
+
+/* ---- actions ---- */
+async function checkHealth(label){
+  const r = await api('/api/health'); showHealth(r.health);
+  log(`${label}: <b>${r.health.status.toLowerCase()}</b>${r.health.issues.length ? ' — ' + r.health.issues.map(i => i.replace(/_/g,' ').toLowerCase()).join(', ') : ', nothing to fix'}`, r.health.status === 'HEALTHY' ? 'ok' : 'warn');
+  return r.health;
+}
+async function ingest(count, faulty){
+  setBusy(faulty ? `Embedding ${count} documents with the wrong model…` : `Embedding and inserting ${count} documents…`);
+  try{
+    const r = await api('/api/ingest', { count, faulty, topic: topic || null });
+    const t0 = now0(), per = Math.min(2600, 700 + r.new.length * 9) / r.new.length, base = N;
+    r.new.forEach((d, k) => {
+      const at = t0 + k*per, i = base + k;
+      addPoint(i, d.xyz[0], d.xyz[1], d.xyz[2], d.cat, d.title, d.id, 1, at);
+      (d.links||[]).forEach(b => EDGES.push({ a:i, b, t0:at, dur:1800, kind:'link' }));
+      (d.touched||[]).forEach(b => EDGES.push({ a:i, b, t0:at+120, dur:1100, kind:'touch' }));
+      (d.pruned||[]).forEach(([c, rr]) => EDGES.push({ a:c, b:rr, t0:at+200, dur:1300, kind:'prune' }));
+    });
+    updateCounts();
+    log(`Added <b>${r.count}</b> ${faulty ? `documents embedded by <b>${esc(r.model)}</b> but labelled as ${esc(META.model)}` : 'documents'} in ${r.seconds}s. The graph reorganised: <b>${fmt(r.neighbour_lists_updated)}</b> neighbour lists updated, <b>${fmt(r.links_pruned)}</b> old links dropped.`, faulty ? 'warn' : '');
+    setBusy('The monitor is checking the database…');
+    const h = await checkHealth('Monitor check');
+    setBusy(null);
+    if (autoHeal && h.status !== 'HEALTHY') await heal();
+  }catch(e){ setBusy(null); log('Error: ' + esc(e.message), 'bad'); }
+}
+async function heal(){
+  const prior = lastHealth;   // what the monitor last saw, before the healer takes its own sample
+  busy = true; ['add100','add300','bad300','heal','reset'].forEach(i => $(i).disabled = true);
+  resetStages(); for (let i = 1; i <= 3; i++) stage(i, 'run');
+  stage(1, 'run', 'Healer is checking quality and sampling rows against their text…'); stage(2, 'run', 'Then it picks a fix from what it finds…');
+  stage(3, 'run', 'Repairs scan every row against its text, about a minute at this size.');
+  const t0 = now0(); $('hsec').textContent = '';
+  const tick = setInterval(() => { $('hsec').textContent = ((now0()-t0)/1000).toFixed(0) + ' s'; }, 500);
+  try{
+    const r = await api('/api/heal');
+    const c0 = r.cycles[0], acts = c0.actions.map(a => a.replace(/_/g,' ').toLowerCase());
+    if (c0.before) showHealth(c0.before);
+    const found = c0.before ? c0.before.issues.map(i => i.replace(/_/g,' ').toLowerCase()).join(', ') : '';
+    stage(1, 'done', c0.before ? `${c0.before.status.toLowerCase()}${found ? ': ' + found : ''}` : 'no result');
+    if (!acts.length && !r.repaired.length){
+      stage(2, 'skip', 'Nothing actionable found'); stage(3, 'skip', 'No repair'); stage(4, 'skip', 'Nothing to verify');
+      const missed = prior && prior.issues.length;
+      log(missed ? `Healer finished in ${r.seconds}s and <b>did nothing</b>: its own sample of rows did not catch the bad ones this time. Detection by sampling is probabilistic (reliable from roughly 2% of rows, not guaranteed on every pass). The new rows are still unverified; run the healer again.`
+                 : `Healer finished in ${r.seconds}s: nothing to fix, so it did nothing.`, missed ? 'warn' : 'ok');
+      return;
+    }
+    stage(2, 'done', acts.length ? 'Chose: ' + acts.join(', ') : 'Matched evidence to a repair');
+    stage(3, 'done', r.repaired.length ? `Rewrote ${r.repaired.length} rows from their text` : 'No rows needed changes');
+    stage(4, 'run', 'Re-checking…'); await new Promise(res => setTimeout(res, 400));
+    if (c0.after) showHealth(c0.after);
+    stage(4, 'done', c0.outcome === 'SUCCEEDED' ? 'Healthy again' : c0.outcome.toLowerCase().replace(/_/g,' '));
+    const idx = new Map(); for (let n = 0; n < N; n++) idx.set(ID[n], n);
+    const start = now0() + 400;
+    r.repaired.forEach((m, k) => { const n = idx.get(m.id); if (n === undefined) return; FLAG[n] = 2; MOVES.push({ n, from:[X[n],Y[n],Z[n]], to:m.to, t0: start + 900 + (k % 60) * 12 }); });
+    for (let n = 0; n < N; n++) if (FLAG[n] === 1) FLAG[n] = 0;
+    updateCounts(); lastHealth = c0.after || lastHealth;
+    const disp = r.repaired.length ? r.repaired.reduce((a, m) => a + Math.hypot(m.to[0]-m.from[0], m.to[1]-m.from[1], m.to[2]-m.from[2]), 0) / r.repaired.length : 0;
+    log(`Healer finished in ${r.seconds}s: <b>${c0.outcome.toLowerCase()}</b>${r.repaired.length ? `, ${r.repaired.length} corrupted rows rewritten from their text` : ''}.`, 'ok');
+    if (r.repaired.length) log(`Look closely: on the map these rows moved only <b>${disp.toFixed(0)}</b> units on average (the whole map is about 640 across). A 3-D picture cannot show that their vectors were wrong. That is why the healer checks vectors against the text, not against the map.`);
+  }catch(e){ log('Error: ' + esc(e.message), 'bad'); }
+  finally { clearInterval(tick); busy = false; setBusy(null); }
+}
+async function reset(){
+  setBusy('Resetting the sandbox from the original data…');
+  try{ await api('/api/reset'); const s = await (await fetch('/api/state')).json(); loadState(s); logEl.innerHTML = ''; resetStages(); log('Sandbox reset to the original data.'); await checkHealth('Monitor check'); }
+  catch(e){ log('Error: ' + esc(e.message), 'bad'); } setBusy(null);
+}
+
+$('add100').onclick = () => ingest(100, false);
+$('add300').onclick = () => ingest(300, false);
+$('bad300').onclick = () => ingest(300, true);
+$('heal').onclick = () => heal();
+$('reset').onclick = () => reset();
+$('auto').onclick = () => { autoHeal = !autoHeal; $('auto').classList.toggle('on', autoHeal); };
+$('topics').onclick = e => { const b = e.target.closest('button'); if (!b) return; topic = b.dataset.t; [...$('topics').children].forEach(c => c.classList.toggle('on', c === b)); };
+
+(async function boot(){
+  const s = await (await fetch('/api/state')).json(); loadState(s);
+  requestAnimationFrame(frame);
+  log('Sandbox ready: a copy of the database. Nothing here touches your original data.');
+  try{ await checkHealth('Monitor check'); }catch(e){ log('Error: ' + esc(e.message), 'bad'); }
+})();
+</script>
+</body>
+</html>

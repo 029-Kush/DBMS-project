@@ -31,6 +31,9 @@ $PHASE2  = Join-Path $PROJ 'sql\phase2_migration.sql'
 $PHASE3  = Join-Path $PROJ 'sql\phase3_migration.sql'
 $PHASE4  = Join-Path $PROJ 'sql\phase4_migration.sql'
 
+# The Windows demo applies the 64-d schema directly, so it pins the TF-IDF embedder.
+$env:SELFHEAL_EMBEDDER = 'tfidf'
+
 function Py([string]$file, [string]$arg) {
   Push-Location $SCRIPTS
   try {

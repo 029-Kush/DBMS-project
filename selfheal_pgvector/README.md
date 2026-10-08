@@ -24,12 +24,14 @@ su postgres -c "psql -c \"CREATE DATABASE selfheal;\""
 su postgres -c "psql -c \"CREATE USER svuser WITH PASSWORD 'svpass' SUPERUSER;\""
 su postgres -c "psql -d selfheal -c \"CREATE EXTENSION vector;\""
 
-# 3. Schema
-su postgres -c "psql -d selfheal -f sql/schema.sql"
-su postgres -c "psql -d selfheal -c \"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO svuser;\""
+# 3. Python deps (deliberately no torch — see note below)
+pip install psycopg2-binary scikit-learn numpy pandas fastembed   # fastembed only for minilm/bge
+# no network or want the old offline baseline: export SELFHEAL_EMBEDDER=tfidf
 
-# 4. Python deps (deliberately no torch — see note below)
-pip install psycopg2-binary scikit-learn numpy pandas
+# 4. Schema (needs the deps above)
+# (the default embedder is minilm, 384-d; db_setup.py applies the schema with the right dimension)
+(cd scripts && python3 db_setup.py ../sql/schema.sql)
+su postgres -c "psql -d selfheal -c \"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO svuser;\""
 
 # 5. Build corpus, fit embedding model, load, build canary set, run baseline
 cd scripts

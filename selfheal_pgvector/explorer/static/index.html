@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VectorSpace — auditable vector search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  /* Tokens from the Stitch export (DESIGN.md): charcoal surfaces, one blue accent. */
+  :root{
+    --card:rgba(20,20,23,.88); --solid:#161618; --raise:#1E1E22; --line:#2A2A2E; --line2:#3F3F46;
+    --t1:#FAFAFA; --t2:#B4B4BC; --t3:#75757D;
+    --accent:#5B8DEF; --accent-d:#4F7DD7; --accent-bg:rgba(91,141,239,.14);
+    --amber:#ffb960; --ok:#34D399; --other:#8DA2C8; --bad:#FB7185;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+    --panel:340px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000;color:var(--t1);font-family:var(--sans);font-size:14px;overflow:hidden;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit}
+  .num{font-family:var(--mono);font-feature-settings:"tnum","zero"}
+  canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+  .grid{position:absolute;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:32px 32px}
+
+  /* ---- search: a centred Spotlight bar that docks into a corner icon after a search ---- */
+  #bar{position:absolute;z-index:30;top:15%;left:calc((100% - 640px)/2);width:640px;
+       transition:left .55s cubic-bezier(.22,.9,.28,1),top .55s cubic-bezier(.22,.9,.28,1),width .55s cubic-bezier(.22,.9,.28,1)}
+  #bar.docked{top:18px;left:18px;width:48px}
+  #bar.docked.open{width:min(460px,calc(100% - 420px))}
+  #box{position:relative;display:flex;align-items:center;gap:12px;height:48px;padding:0 8px 0 18px;border-radius:24px;overflow:hidden;
+       background:rgba(22,22,25,.85);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);box-shadow:0 14px 40px rgba(0,0,0,.55);
+       transition:padding .55s cubic-bezier(.22,.9,.28,1),border-color .2s}
+  #box:focus-within{border-color:rgba(91,141,239,.6)}
+  #bar.docked:not(.open) #box{padding:0 14px;cursor:pointer}
+  #bar.docked:not(.open) #box:hover{border-color:rgba(91,141,239,.5)}
+  #ico{flex:none;display:flex;color:var(--t2);background:none;border:0;padding:0;cursor:inherit}
+  #q{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--t1);font:400 15px var(--sans);letter-spacing:-.01em;transition:opacity .25s}
+  #q::placeholder{color:var(--t3)}
+  #kbd,#go{flex:none;transition:opacity .25s}
+  #kbd{font:10px var(--mono);padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--t3)}
+  #go{height:32px;width:32px;border-radius:50%;border:0;background:rgba(255,255,255,.07);color:var(--t2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  #go:hover{background:var(--accent);color:#fff}
+  #bar.docked:not(.open) #q,#bar.docked:not(.open) #kbd,#bar.docked:not(.open) #go{opacity:0;pointer-events:none}
+  #bar.loading #box::after{content:"";position:absolute;inset:-1px;border-radius:24px;border:2px solid transparent;border-top-color:var(--accent);animation:spin .9s linear infinite;pointer-events:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #sugg{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;transition:opacity .3s}
+  #sugg button{font:12px var(--sans);color:var(--t2);background:rgba(22,22,25,.8);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer}
+  #sugg button:hover{color:var(--t1);border-color:var(--line2)}
+  #bar.docked:not(.open) #sugg{opacity:0;pointer-events:none;height:0;margin:0;overflow:hidden}
+  #status{margin-top:10px;text-align:center;font-size:12px;color:var(--t3);min-height:16px}
+  #status.err{color:#FB7185}
+  #stale{position:absolute;z-index:30;top:18px;left:50%;transform:translateX(-50%);display:none;padding:6px 14px;border-radius:999px;font-size:12px;color:var(--amber);background:rgba(40,28,10,.9);border:1px solid rgba(255,185,96,.3)}
+
+  /* ---- labels on the canvas ---- */
+  .lab{position:absolute;z-index:20;pointer-events:none;transform:translate(-50%,-135%);white-space:nowrap;background:rgba(18,18,21,.94);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:12px;color:#E4E4E7;display:flex;gap:7px;align-items:center}
+  .lab i{font:normal 10px var(--mono);color:var(--t3)}
+  .lab.best{border-color:rgba(91,141,239,.5)} .lab.best i{color:var(--accent)}
+  .lab.q{border-color:rgba(250,250,250,.3)}
+  #tip{position:absolute;z-index:40;pointer-events:none;display:none;max-width:300px;background:var(--raise);border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--t1);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  #tip i{display:block;font:normal 11px var(--sans);color:var(--t3);margin-top:3px}
+
+  /* ---- floating results panel ---- */
+  #panel{position:absolute;z-index:30;top:16px;right:16px;bottom:16px;width:var(--panel);display:flex;flex-direction:column;border-radius:20px;overflow:hidden;
+         background:var(--card);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);box-shadow:0 18px 50px rgba(0,0,0,.6);
+         transform:translateX(calc(100% + 30px));opacity:0;transition:transform .6s cubic-bezier(.22,.9,.28,1),opacity .4s}
+  #panel.show{transform:none;opacity:1}
+  #ph{padding:18px 20px 12px}
+  #pq{font-size:15px;font-weight:600;letter-spacing:-.015em;line-height:1.35;margin:0 0 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);color:var(--t2);background:rgba(255,255,255,.04)}
+  .pill.ok{color:var(--ok);border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.08)}
+  .pill.warn{color:var(--amber);border-color:rgba(255,185,96,.3);background:rgba(255,185,96,.08)}
+  #tabs{display:flex;gap:4px;margin:0 16px 4px;padding:4px;border-radius:12px;background:rgba(255,255,255,.05)}
+  #tabs button{flex:1;height:30px;border:0;border-radius:9px;background:transparent;color:var(--t3);font-size:13px;font-weight:500;cursor:pointer}
+  #tabs button:hover{color:var(--t1)}
+  #tabs button.on{background:var(--raise);color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  #pb{flex:1;overflow-y:auto;padding:12px 16px 18px}
+  #pb::-webkit-scrollbar{width:5px} #pb::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .card{display:flex;gap:12px;padding:11px 12px;margin-bottom:6px;border-radius:14px;cursor:pointer;border:1px solid transparent;transition:background .15s}
+  .card:hover{background:rgba(255,255,255,.05)}
+  .card.sel{background:var(--accent-bg);border-color:rgba(91,141,239,.35)}
+  .rank{flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:500 11px var(--mono);color:var(--t2);background:rgba(255,255,255,.07)}
+  .card.sel .rank{background:var(--accent);color:#fff}
+  .ct{min-width:0;flex:1}
+  .ctt{font-size:13px;line-height:1.4;color:#EDEDF0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cm{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11px;color:var(--t3)}
+  .bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden} .bar b{display:block;height:3px;background:var(--accent);border-radius:2px}
+  .tag{padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.06)}
+  .ex{margin-top:9px;font-size:12px;line-height:1.55;color:var(--t2)}
+  .sec{font-size:12px;font-weight:600;color:var(--t2);margin:18px 2px 8px;display:flex;justify-content:space-between;align-items:center}
+  .sec:first-child{margin-top:4px} .sec span{font-weight:400;color:var(--t3)}
+  .stp{position:relative;display:flex;gap:14px;padding:0 4px 18px 4px;cursor:pointer}
+  .stp:not(:last-child)::before{content:"";position:absolute;left:11px;top:22px;bottom:0;width:1.5px;background:var(--line2)}
+  .stp .d{flex:none;width:16px;height:16px;border-radius:50%;margin:3px 3px 0 3px;background:#27272A;border:2px solid var(--line2)}
+  .stp.mid .d{border-color:var(--accent);background:var(--solid)} .stp.last .d{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 4px rgba(91,141,239,.18)}
+  .stp .st{font-size:13px;line-height:1.4;color:#E4E4E7} .stp .ss{font-size:12px;color:var(--t3);margin-top:2px}
+  .stp:hover .st{color:#fff}
+  .tog{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);font-size:13px;color:var(--t2);cursor:pointer;margin-bottom:6px}
+  .sw{width:34px;height:20px;border-radius:10px;background:#3F3F46;position:relative;transition:background .2s} .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+  .tog.on .sw{background:var(--accent)} .tog.on .sw::after{transform:translateX(14px)}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--t3);margin:6px 2px 14px;flex-wrap:wrap} .legend i{display:inline-block;width:18px;border-top:2px solid;vertical-align:middle;margin-right:6px}
+  .note{font-size:12px;line-height:1.6;color:var(--t3);margin:0 2px 8px} .note b{color:var(--t2);font-weight:500}
+  .stat{display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:var(--t2)} .stat span:last-child{font-family:var(--mono);color:var(--t1);font-size:12px}
+  .meter{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin:8px 2px 10px;overflow:hidden} .meter div{height:5px;background:var(--accent)}
+
+  /* ---- narration + controls (bottom left) ---- */
+  #narr{position:absolute;left:18px;bottom:72px;z-index:25;width:min(520px,calc(100% - var(--lc) - var(--panel) - 52px));padding:12px 16px 12px;border-radius:16px;background:var(--card);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);display:none}
+  #narr .n{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;color:var(--t3)}
+  #narr .n b{font-weight:500;color:var(--accent);letter-spacing:.02em}
+  #narr-t{font-size:13px;line-height:1.5;color:var(--t2)} #narr-t em{font-style:normal;color:var(--t1)}
+  #bartrack{height:3px;background:rgba(255,255,255,.08);margin-top:10px;border-radius:2px;overflow:hidden} #barfill{height:3px;background:var(--accent);width:0}
+  #ctl{display:flex;gap:6px;margin-top:10px}
+  #ctl button{height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--t2);font-size:12px;cursor:pointer}
+  #ctl button:hover{color:var(--t1);border-color:var(--line2)}
+  #dock{position:absolute;left:18px;bottom:18px;z-index:30;display:flex;align-items:center;gap:12px}
+  #dock .g{display:flex;align-items:center;gap:2px;background:var(--card);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:4px}
+  #dock button{background:transparent;border:0;color:var(--t3);font-size:12px;padding:6px 12px;border-radius:999px;cursor:pointer}
+  #dock button:hover{color:var(--t1)} #dock button.on{background:rgba(255,255,255,.09);color:var(--t1)}
+  #legend{display:flex;gap:12px;font-size:11px;color:var(--t3)} #legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+  @media (max-width:1000px){ #legend{display:none} }
+
+  /* ---- Add information column (left) ---- */
+  :root{--lc:18px}
+  #narr,#dock{left:var(--lc);transition:left .5s cubic-bezier(.22,.9,.28,1)}
+  #addbtn{position:absolute;z-index:31;left:18px;top:76px;width:48px;height:48px;border-radius:24px;display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;
+          background:rgba(22,22,25,.85);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);box-shadow:0 14px 40px rgba(0,0,0,.55);transition:border-color .2s,color .2s}
+  #addbtn:hover,#addbtn.on{color:var(--t1);border-color:rgba(91,141,239,.55)} #addbtn.on{background:var(--accent-bg)}
+  #addbtn .badge{position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:var(--amber);border:2px solid #000;display:none}
+  #col{position:absolute;z-index:30;top:16px;left:78px;bottom:16px;width:332px;display:flex;flex-direction:column;border-radius:20px;overflow:hidden;
+       background:var(--card);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);box-shadow:0 18px 50px rgba(0,0,0,.6);
+       transform:translateX(-40px);opacity:0;pointer-events:none;transition:transform .5s cubic-bezier(.22,.9,.28,1),opacity .35s}
+  #col.show{transform:none;opacity:1;pointer-events:auto}
+  #ch{padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:center}
+  #ch b{font-size:15px;font-weight:600;letter-spacing:-.015em}
+  #cg{padding:2px 20px 8px}
+  .cg{margin:9px 0}.cg .t{display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:5px}.cg .t span:last-child{font-family:var(--mono);color:var(--t1)}
+  .cg .b{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.cg .b div{height:5px;border-radius:3px;background:var(--accent);transition:width .6s,background .3s}
+  .cg.bad .b div{background:var(--bad)}.cg.ok .b div{background:var(--ok)}
+  #cissues{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px;min-height:22px}
+  #ctabs{display:flex;gap:4px;margin:6px 16px 4px;padding:4px;border-radius:12px;background:rgba(255,255,255,.05)}
+  #ctabs button{flex:1;height:30px;border:0;border-radius:9px;background:transparent;color:var(--t3);font-size:13px;font-weight:500;cursor:pointer}
+  #ctabs button:hover{color:var(--t1)}#ctabs button.on{background:var(--raise);color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  #cb{flex:1;overflow-y:auto;padding:10px 20px 18px}
+  #cb::-webkit-scrollbar{width:5px}#cb::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .lbl{font-size:12px;font-weight:600;color:var(--t2);margin:14px 0 8px}.lbl:first-child{margin-top:4px}
+  textarea.in,select.in,input.in{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;color:var(--t1);font:13px var(--sans);padding:10px 12px;outline:0}
+  textarea.in{height:104px;resize:vertical;line-height:1.5}textarea.in:focus,select.in:focus,input.in:focus{border-color:rgba(91,141,239,.6)}
+  .cbtn{height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--t1);font-size:13px;font-weight:500;cursor:pointer}
+  .cbtn:hover{border-color:var(--line2)}.cbtn:disabled{opacity:.4;cursor:default}.cbtn.p{background:var(--accent);border-color:var(--accent);color:#fff}.cbtn.p:hover{background:var(--accent-d)}
+  .cbtn.f{border-color:rgba(251,113,133,.35);color:var(--bad)}
+  .crow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .tpills{display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.05);flex-wrap:wrap}
+  .tpills button{border:0;background:transparent;color:var(--t3);font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}.tpills button:hover{color:var(--t1)}.tpills button.on{background:rgba(255,255,255,.1);color:var(--t1)}
+  .cnote{font-size:12px;line-height:1.6;color:var(--t3);margin:8px 0}.cnote b{color:var(--t2);font-weight:500}
+  .ctog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--t2);cursor:pointer;user-select:none;margin:10px 0}
+  .csw{width:30px;height:18px;border-radius:9px;background:#3F3F46;position:relative;transition:background .2s}.csw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+  .ctog.on .csw{background:var(--accent)}.ctog.on .csw::after{transform:translateX(12px)}
+  .cstg{position:relative;display:flex;gap:12px;padding:5px 0 11px}
+  .cstg:not(:last-child)::before{content:"";position:absolute;left:7px;top:22px;bottom:-2px;width:1.5px;background:var(--line2)}
+  .cstg .d{flex:none;width:16px;height:16px;border-radius:50%;margin-top:2px;background:#27272A;border:2px solid var(--line2);transition:all .3s}
+  .cstg .n{font-size:13px;color:var(--t3)}.cstg .s{font-size:12px;color:var(--t3);margin-top:2px;line-height:1.4}
+  .cstg.run .d{border-color:var(--accent);background:var(--accent-bg);animation:cpulse 1.1s ease-in-out infinite}.cstg.run .n{color:var(--t1)}
+  .cstg.done .d{background:var(--accent);border-color:var(--accent)}.cstg.done .n{color:var(--t1)}.cstg.done .s{color:var(--t2)}.cstg.skip .d{border-style:dashed}
+  @keyframes cpulse{50%{box-shadow:0 0 0 5px rgba(91,141,239,.2)}}
+  .cev{font-size:12px;line-height:1.5;color:var(--t2);padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}.cev time{font:10px var(--mono);color:var(--t3);margin-right:8px}
+  .cev.warn{color:var(--amber)}.cev.bad{color:var(--bad)}.cev.ok{color:var(--ok)}
+  #cbusy{display:none;align-items:center;gap:10px;margin:8px 20px 0;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.05);font-size:12px;color:var(--t2)}
+  #cbusy i{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.15);border-top-color:var(--accent);animation:spin .8s linear infinite}
+  .legend2{display:flex;gap:12px;font-size:11px;color:var(--t3);margin:6px 0;flex-wrap:wrap}.legend2 i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="grid"></div>
+<div id="labels"></div>
+<div id="tip"></div>
+<div id="stale">The database changed — rebuilding the index…</div>
+
+
+<button id="addbtn" title="Add information and healing" aria-label="Add information"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="badge" id="addbadge"></span></button>
+<aside id="col">
+  <div id="ch"><b>Add information</b><span id="cstat"></span></div>
+  <div id="cg">
+    <div class="cg" id="cg1"><div class="t"><span>Search quality (canary recall)</span><span id="cv1">–</span></div><div class="b"><div id="cb1" style="width:0"></div></div></div>
+    <div class="cg" id="cg2"><div class="t"><span>Rows that don't match their text</span><span id="cv2">–</span></div><div class="b"><div id="cb2" style="width:0"></div></div></div>
+    <div class="cg" id="cg3"><div class="t"><span>Index accuracy (vs exact)</span><span id="cv3">–</span></div><div class="b"><div id="cb3" style="width:0"></div></div></div>
+    <div id="cissues"></div>
+  </div>
+  <div id="cbusy"><i></i><span id="cbusy-t"></span></div>
+  <div id="ctabs"><button data-ct="add" class="on">Add</button><button data-ct="heal">Healing</button><button data-ct="log">Activity</button></div>
+  <div id="cb"></div>
+</aside>
+
+<div id="bar">
+  <div id="box">
+    <button id="ico" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+    <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="What are you looking for?" maxlength="500"/>
+    <span id="kbd">Ctrl K</span>
+    <button id="go" title="Search" aria-label="Run search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>
+  </div>
+  <div id="sugg"></div>
+  <div id="status"></div>
+</div>
+
+<aside id="panel">
+  <div id="ph"><p id="pq"></p><div id="pverify"></div></div>
+  <div id="tabs"><button data-tab="results" class="on">Results</button><button data-tab="path">Path</button><button data-tab="checks">Checks</button></div>
+  <div id="pb"></div>
+</aside>
+
+<div id="narr">
+  <div class="n"><b id="narr-k">STEP</b><span id="narr-c"></span></div>
+  <div id="narr-t"></div>
+  <div id="bartrack"><div id="barfill"></div></div>
+  <div id="ctl"><button id="replay">↻ Replay</button><button id="skip">Skip to result</button></div>
+</div>
+
+<div id="dock">
+  <div class="g">
+    <button id="reset" title="Reset the view">Reset view</button>
+    <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button>
+    <button id="topic" class="on" title="Tint points by news topic">Topics</button>
+  </div>
+  <div id="legend"></div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0;
+function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
+addEventListener('resize', resize); resize();
+
+const TOPIC = { world:'#8DA2C8', sports:'#8BB59B', business:'#C9A56B', scitech:'#B592C9' };
+let META = null, P = null, R = null, A = null, sel = null;
+let hover = -1, mouse = {x:0,y:0};
+let speed = 1, playing = false, stepF = 0, finalT = 0, lastT = performance.now();
+let panelDone = false, useTopic = true, showAlt = true, tab = 'results', panelOn = false, cx = 0, lastIdx = -1, wasDone = false;
+const pulses = [];
+
+/* ---------------- camera ---------------- */
+const CAM0 = { z:-660, rotX:.22, rotY:-.35 };
+const cam = { z:CAM0.z, rotX:CAM0.rotX, rotY:CAM0.rotY, tX:CAM0.rotX, tY:CAM0.rotY, fov:820 };
+let drag = false, px = 0, py = 0;
+cv.addEventListener('mousedown', e => { drag = true; px = e.clientX; py = e.clientY; });
+addEventListener('mouseup', () => drag = false);
+addEventListener('mousemove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  if (drag){ cam.tY += (e.clientX-px)*.004; cam.tX += (e.clientY-py)*.004; px = e.clientX; py = e.clientY; }
+});
+cv.addEventListener('wheel', e => { cam.z = Math.min(-260, Math.max(-1600, cam.z + e.deltaY*.6)); }, {passive:true});
+function proj(x,y,z){
+  const cy = Math.cos(cam.rotY), sy = Math.sin(cam.rotY);
+  const x1 = x*cy - z*sy, z1 = z*cy + x*sy;
+  const c = Math.cos(cam.rotX), s = Math.sin(cam.rotX);
+  const y2 = y*c - z1*s, z2 = z1*c + y*s;
+  const d = z2 - cam.z; if (d <= 20) return null;
+  const k = cam.fov/d; return { x:x1*k + cx, y:y2*k + H/2, s:k, d };
+}
+const pt = n => P.xyz[n];
+const pp = n => { const v = P.xyz[n]; return proj(v[0],v[1],v[2]); };
+
+/* ---------------- helpers ---------------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ttl = n => P.title[n];
+const sim = d => (1-d).toFixed(2);
+const fmt = n => n.toLocaleString('en-US');
+const topicOf = n => P.category[n];
+
+function derive(r){
+  const dmap = new Map(), layerAt = new Map();
+  r.steps.forEach(s => {
+    if (s.kind !== 'stop' && s.dist !== undefined) dmap.set(s.node, s.dist);
+    if (s.kind === 'greedy' || s.kind === 'entry') layerAt.set(s.node, Math.max(layerAt.get(s.node) ?? 0, s.layer));
+    (s.evaluated || []).forEach(e => { if (!dmap.has(e[0])) dmap.set(e[0], e[1]); });
+  });
+  r.results.forEach(x => dmap.set(x.n, x.dist)); r.near_miss.forEach(x => dmap.set(x.n, x.dist));
+  return { dmap, layerAt, count:r.steps.length };
+}
+function stepText(s){
+  const t = n => '<em>“'+esc(ttl(n))+'”</em>';
+  if (s.kind === 'entry') return ['Starting point', `Every search starts at the same entry point on the top layer: ${t(s.node)} (similarity to your query ${sim(s.dist)}).`];
+  if (s.kind === 'greedy'){
+    const n = s.evaluated.length;
+    if (s.moved_to !== null){
+      const d2 = s.evaluated.find(e => e[0] === s.moved_to)[1];
+      return [`Layer ${s.layer} · moving closer`, `Checked ${n} neighbours of ${t(s.node)}. ${t(s.moved_to)} is closest to your query (${sim(d2)}), so move there.`];
+    }
+    return [`Layer ${s.layer} · going deeper`, `None of the ${n} neighbours of ${t(s.node)} is closer than it is (${sim(s.dist)}), so drop to the next, more detailed layer.`];
+  }
+  if (s.kind === 'expand'){
+    const kept = s.evaluated.filter(e => e[2] === 'kept').length;
+    return ['Layer 0 · searching wider', `Opened ${t(s.node)} (${sim(s.dist)}). Scored ${s.evaluated.length} new neighbours: ${kept} join the shortlist, ${s.evaluated.length-kept} do not.`];
+  }
+  return ['Done searching', `The next candidate is no closer than the worst one already on the shortlist, so going further would not help.`];
+}
+
+/* ---------------- search bar docking ---------------- */
+const bar = $('bar');
+function openBar(){ bar.classList.add('open'); $('q').focus(); $('q').select(); }
+function closeBar(){ if (R) bar.classList.remove('open'); }
+$('box').addEventListener('click', () => { if (bar.classList.contains('docked') && !bar.classList.contains('open')) openBar(); });
+bar.addEventListener('focusout', e => { if (!bar.contains(e.relatedTarget)) setTimeout(() => { if (!bar.contains(document.activeElement)) closeBar(); }, 120); });
+function setStatus(t, err){ const s = $('status'); s.textContent = t; s.className = err ? 'err' : ''; if (err && R) bar.classList.add('open'); }
+
+async function runSearch(q){
+  q = q.trim(); if (!q) return;
+  setStatus('');
+  bar.classList.add('docked', 'loading'); bar.classList.remove('open'); $('q').blur();
+  try{
+    const res = await fetch('/api/search?k=10&q=' + encodeURIComponent(q));
+    const j = await res.json();
+    if (!res.ok){ bar.classList.remove('loading'); if (!R) bar.classList.remove('docked'); setStatus(j.error || j.detail || 'Search failed', true); return; }
+    R = j; A = derive(j); sel = j.results[0].n; tab = 'results'; panelDone = false;
+    stepF = 0; finalT = 0; playing = true; lastT = performance.now(); lastIdx = -1; wasDone = false; pulses.length = 0;
+    $('stale').style.display = j.stale ? 'block' : 'none';
+    panelOn = true; $('panel').classList.add('show'); $('narr').style.display = 'block';
+    renderPanel();
+  }catch(e){ if (!R) bar.classList.remove('docked'); setStatus('Could not reach the server: ' + e.message, true); }
+  bar.classList.remove('loading');
+}
+
+/* ---------------- panel ---------------- */
+function verifyPill(c){
+  if (c.own_vs_pgvector === null) return `<span class="pill warn">Checked against a full scan only</span>`;
+  const ok = c.own_vs_exact === c.k && c.own_vs_pgvector === c.k;
+  return ok ? `<span class="pill ok">✓ Verified — matches an exact search</span>` : `<span class="pill warn">Differs from the exact answer — see Checks</span>`;
+}
+function renderPanel(){
+  if (!R) return;
+  $('pq').textContent = '“' + R.query + '”';
+  if (!panelDone){   // do not reveal the answer while the live trace is still playing
+    $('pverify').innerHTML = '<span class="pill">Searching…</span>';
+    $('pb').innerHTML = '<p class="note" style="margin-top:14px">The search is walking through the map. Results, the path and the checks appear here when it finishes. Use <b>Skip to result</b> to jump ahead.</p>';
+    return;
+  }
+  $('pverify').innerHTML = verifyPill(R.check);
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const body = $('pb'), keep = body.scrollTop;
+  body.innerHTML = tab === 'results' ? tabResults() : tab === 'path' ? tabPath() : tabChecks();
+  body.scrollTop = keep;
+}
+function tabResults(){
+  const hi = R.results[0].score, lo = Math.min(...R.results.map(x => x.score));
+  return R.results.map((x,i) => `
+    <div class="card ${x.n===sel?'sel':''}" data-n="${x.n}">
+      <div class="rank">${i+1}</div>
+      <div class="ct"><div class="ctt">${esc(x.title)}</div>
+        <div class="cm"><span class="tag">${esc(x.category)}</span><span class="bar"><b style="width:${Math.max(8,(x.score-lo*.9)/(hi-lo*.9)*100)}%"></b></span><span class="num">${x.score.toFixed(2)}</span></div>
+        ${x.n===sel ? `<div class="ex">${esc(x.text.slice(0,260))}${x.text.length>260?'…':''}</div>` : ''}
+      </div></div>`).join('');
+}
+function tabPath(){
+  const path = R.paths[String(sel)] || [sel], isRes = R.results.findIndex(x => x.n === sel);
+  const steps = path.map((m,i) => {
+    const last = i === path.length-1, first = i === 0;
+    const cap = first ? 'Starting point · same for every search' : last ? (isRes >= 0 ? `Result #${isRes+1}` : 'Just outside the top 10') : `Hop ${i} · moved closer`;
+    return `<div class="stp ${last?'last':first?'':'mid'}" data-n="${m}"><span class="d"></span><div><div class="st">${esc(ttl(m))}</div><div class="ss">${cap} · similarity <span class="num">${A.dmap.has(m)?sim(A.dmap.get(m)):'–'}</span></div></div></div>`;
+  }).join('');
+  const others = R.results.slice(1,5).filter(x => x.n !== sel).map(x => ({x, k:'alt'})).concat(R.near_miss.filter(x => x.n !== sel).map(x => ({x, k:'near'})));
+  return `<div class="sec">How it got there <span>${path.length-1} hops</span></div>${steps}
+    <div class="sec">Other routes</div>
+    <div class="tog ${showAlt?'on':''}" id="tog-alt"><span>Show them on the map</span><span class="sw"></span></div>
+    <div class="legend"><span style="color:var(--accent)"><i></i>chosen</span><span style="color:var(--other)"><i style="border-top-style:dashed"></i>also found</span><span style="color:var(--amber)"><i style="border-top-style:dashed"></i>almost</span></div>
+    ${others.map(o => `<div class="card" data-n="${o.x.n}"><div class="rank" style="color:${o.k==='alt'?'var(--other)':'var(--amber)'}">${o.k==='alt'?R.results.findIndex(r=>r.n===o.x.n)+1:'·'}</div><div class="ct"><div class="ctt">${esc(o.x.title)}</div><div class="cm"><span>${o.k==='alt'?'Also found':'Just outside the top 10'}</span><span class="num" style="margin-left:auto">${o.x.score.toFixed(2)}</span></div></div></div>`).join('')}`;
+}
+function tabChecks(){
+  const c = R.check, k = c.k, pct = META.projection.neighbour_preservation;
+  return `<div class="sec">Is this the right answer?</div>
+    <p class="note"><b>${c.own_vs_exact} of ${k}</b> results are the true closest documents, checked by comparing your query with all ${fmt(R.documents)} documents.</p>
+    <p class="note">${c.own_vs_pgvector === null ? 'The database index was unavailable for a second check.' : `<b>${c.own_vs_pgvector} of ${k}</b> are the same as what the database's own index (pgvector) returns.`}</p>
+    <div class="sec">How it searched</div>
+    <div class="stat"><span>Documents looked at</span><span>${fmt(R.visited_layer0)} of ${fmt(R.documents)}</span></div>
+    <div class="stat"><span>Search time</span><span>${R.search_ms} ms</span></div>
+    ${R.pgvector_ms !== null ? `<div class="stat"><span>Database index time</span><span>${R.pgvector_ms} ms</span></div>` : ''}
+    <div class="stat"><span>Model</span><span>${esc(META.model)} · ${META.dim}-d</span></div>
+    <div class="stat"><span>Index</span><span>HNSW · m=${META.index.m} · ef=${META.index.ef_search}</span></div>
+    <div class="sec">Reading the 3D map</div>
+    <p class="note"><b>Similarity scores are exact.</b> They are computed in the original ${META.dim} dimensions.</p>
+    <p class="note"><b>Positions are approximate.</b> Squeezing ${META.dim} dimensions into 3 keeps only ${(pct*100).toFixed(0)}% of each point's true 10 nearest neighbours, so two close points may not be similar, and a correct path can look indirect.</p>
+    <div class="meter"><div style="width:${pct*100}%"></div></div>
+    <p class="note">A <b>hop</b> means: score a document's linked neighbours against your query and move to the closest. It is arithmetic on the vectors, not reasoning.</p>`;
+}
+$('pb').addEventListener('click', e => {
+  if (e.target.closest('#tog-alt')){ showAlt = !showAlt; renderPanel(); return; }
+  const el = e.target.closest('[data-n]'); if (!el) return;
+  sel = +el.dataset.n; renderPanel();
+});
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.tab; renderPanel(); $('pb').scrollTop = 0; });
+
+/* ---------------- drawing ---------------- */
+function line(a,b,style,w,dash){
+  const p = pp(a), q = pp(b); if (!p || !q) return;
+  ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+  ctx.strokeStyle = style; ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+}
+function polyline(path, t, style, w, dash, glow){
+  const segs = path.length - 1; if (segs < 1) return;
+  const upto = t * segs;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < segs; i++){
+    const f = Math.min(1, Math.max(0, upto - i)); if (f <= 0) break;
+    const a = pt(path[i]), b = pt(path[i+1]);
+    const p = proj(a[0],a[1],a[2]), q = proj(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f); if (!p || !q) continue;
+    if (glow){ ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.strokeStyle = 'rgba(91,141,239,.2)'; ctx.lineWidth = w+6; ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.strokeStyle = style; ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.lineCap = 'butt';
+}
+function dotAt(n, r, fill, stroke, lw){
+  const p = pp(n); if (!p) return null;
+  ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(2,r*p.s),0,6.2832); ctx.fillStyle = fill; ctx.fill();
+  if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = lw||1.2; ctx.stroke(); }
+  return p;
+}
+function addPulse(n, delay){ pulses.push({ n, t0: performance.now() + (delay||0) }); if (pulses.length > 14) pulses.shift(); }
+function drawPulses(now){
+  for (let i = pulses.length-1; i >= 0; i--){
+    const age = (now - pulses[i].t0) / 1000;           // seconds; 1 s life
+    if (age > 1){ pulses.splice(i,1); continue; }
+    if (age < 0) continue;
+    const p = pp(pulses[i].n); if (!p) continue;
+    const e = 1 - Math.pow(1-age, 3);
+    ctx.beginPath(); ctx.arc(p.x,p.y, 5 + 30*e*(.6+p.s*.6), 0, 6.2832);
+    ctx.strokeStyle = `rgba(91,141,239,${.55*(1-age)})`; ctx.lineWidth = 1.4; ctx.stroke();
+  }
+}
+const labelEls = new Map();
+function placeLabels(wanted){
+  const host = $('labels'), seen = new Set(), placed = [];
+  for (const w of wanted){
+    const p0 = w.xy || (w.n !== undefined ? pp(w.n) : null); if (!p0) continue;
+    const wd = w.html.replace(/<[^>]+>/g,'').length*6.6 + 30;
+    let p = { x:p0.x, y:p0.y };
+    for (let t = 0; t < 10 && placed.some(r => Math.abs(r.x-p.x) < (r.w+wd)/2 && Math.abs(r.y-p.y) < 28); t++) p.y += 29;
+    placed.push({ x:p.x, y:p.y, w:wd });
+    let el = labelEls.get(w.key);
+    if (!el){ el = document.createElement('div'); el.className = 'lab ' + (w.cls||''); host.appendChild(el); labelEls.set(w.key, el); }
+    if (el.dataset.html !== w.html){ el.innerHTML = w.html; el.dataset.html = w.html; }
+    el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; seen.add(w.key);
+  }
+  for (const [k,el] of labelEls) if (!seen.has(k)){ el.remove(); labelEls.delete(k); }
+}
+
+let lastProj = null;
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = Math.max(0, Math.min(.1, (now-lastT)/1000)); lastT = now;   // rAF timestamps can precede performance.now(), so never go negative
+  const Lc = colOpen ? 420 : 0, Rc = panelOn ? 356 : 0, targetCx = Lc + (W - Lc - Rc)/2; cx += (targetCx - cx) * Math.min(1, dt*5);
+  cam.rotX += (cam.tX-cam.rotX)*.08; cam.rotY += (cam.tY-cam.rotY)*.08;
+  if (!drag && !playing) cam.tY += .0002;
+  ctx.clearRect(0,0,W,H);
+  if (!P) return;
+  for (let i = MOVES.length-1; i >= 0; i--){   // repaired rows glide to where their corrected vector projects
+    const m = MOVES[i], k = Math.min(1, Math.max(0, (now - m.t0)/1800)); if (k <= 0) continue; const e = ease(k);
+    P.xyz[m.n] = [m.from[0]+(m.to[0]-m.from[0])*e, m.from[1]+(m.to[1]-m.from[1])*e, m.from[2]+(m.to[2]-m.from[2])*e];
+    if (k >= 1){ P.flag[m.n] = 3; P.born[m.n] = now; MOVES.splice(i,1); }
+  }
+  const N = P.xyz.length, focus = !!R;
+  const grey = R && A && stepF >= A.count ? finalT : 0;   // 0 while searching, 1 once the final path is drawn
+  lastProj = new Array(N);
+  for (let n = 0; n < N; n++){
+    const p = pp(n); lastProj[n] = p; if (!p) continue;
+    const f = P.flag[n] || 0, born = P.born[n] ?? -1e9; if (born > now) continue;
+    const age = now - born, pop = f === 1 && age < 500 ? 1 + 2.2*(1 - age/500) : 1;
+    const a = Math.min(.8, (focus ? .22 : .4) * p.s * 1.6), r = Math.max(.8, 1.7*p.s*pop);
+    if (f === 2){ ctx.globalAlpha = .95; ctx.fillStyle = '#FB7185'; ctx.fillRect(p.x-r/2,p.y-r/2,r,r); }
+    else {
+      if (grey < 1){ ctx.globalAlpha = a*(1-grey); ctx.fillStyle = useTopic ? TOPIC[P.category[n]] || '#E1E1E6' : '#E1E1E6'; ctx.fillRect(p.x-r/2,p.y-r/2,r,r); }
+      if (grey > 0){ ctx.globalAlpha = a*grey*.8; ctx.fillStyle = '#7C7C84'; ctx.fillRect(p.x-r/2,p.y-r/2,r,r); }
+    }
+    if (f === 1 || f === 2 || (f === 3 && age < 6000)){   // new = amber ring, found corrupted = red, repaired = fading blue
+      ctx.globalAlpha = f === 3 ? .8*(1 - age/6000) : .9; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(3, 4*p.s), 0, 6.2832);
+      ctx.strokeStyle = f === 1 ? '#ffb960' : f === 2 ? '#FB7185' : '#5B8DEF'; ctx.lineWidth = 1.2; ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  for (let i = EDGES.length-1; i >= 0; i--){   // flashes: new links (blue), neighbour lists that changed (pulse), links dropped (red)
+    const e = EDGES[i], k = (now - e.t0)/e.dur; if (k > 1){ EDGES.splice(i,1); continue; } if (k < 0) continue;
+    const a = lastProj[e.a], b = lastProj[e.b]; if (!a || !b) continue;
+    if (e.kind === 'touch'){ ctx.beginPath(); ctx.arc(b.x, b.y, 3 + 12*k, 0, 6.2832); ctx.strokeStyle = `rgba(91,141,239,${.5*(1-k)})`; ctx.lineWidth = 1; ctx.stroke(); continue; }
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = e.kind === 'link' ? `rgba(120,165,255,${.75*(1-k)})` : `rgba(251,113,133,${.55*(1-k)})`; ctx.lineWidth = e.kind === 'link' ? 1.1 : .8; ctx.stroke();
+  }
+  if (R){
+    if (playing){
+      stepF += dt * 8 * speed;
+      if (stepF >= A.count){ stepF = A.count; finalT = Math.min(1, finalT + dt*speed/1.4); if (finalT >= 1) playing = false; }
+    }
+    const idx = Math.max(0, Math.min(A.count-1, Math.floor(stepF))), done = stepF >= A.count, fade = done ? .35 : 1;
+    if (done !== panelDone){ panelDone = done; renderPanel(); }
+    if (!done && idx !== lastIdx){ lastIdx = idx; addPulse(R.steps[idx].node); }
+    if (done && !wasDone){ wasDone = true; R.results.slice(0,5).forEach((x,i) => addPulse(x.n, i*140)); }
+    if (!done) wasDone = false;
+    const touched = new Set();
+    for (let i = 0; i <= idx; i++){
+      const s = R.steps[i], cur = i === idx && !done;
+      touched.add(s.node);
+      (s.evaluated || []).forEach(e => {
+        touched.add(e[0]);
+        const st = e[2] || (e[0] === s.moved_to ? 'kept' : 'seen');
+        line(s.node, e[0], st === 'kept' && !done ? `rgba(91,141,239,${(cur?.8:.28)*fade+.04})` : `rgba(161,161,170,${(cur?.35:.1)*fade+.02})`, cur ? 1.1 : .7);
+      });
+    }
+    if (!done) touched.forEach(n => dotAt(n, 1.9, 'rgba(174,198,255,.7)'));
+    if (!done){
+      const s = R.steps[idx], pulse = 1 + .2*Math.sin(now/130);
+      dotAt(s.node, 3.6*pulse, '#FAFAFA', 'rgba(91,141,239,.9)', 1.6);
+      if (s.moved_to !== null && s.moved_to !== undefined) dotAt(s.moved_to, 3, 'rgba(91,141,239,.9)', '#FAFAFA', 1);
+    }
+    if (done || finalT > 0){
+      const ft = done ? finalT : 0;
+      if (showAlt){
+        R.near_miss.forEach(x => polyline(R.paths[String(x.n)], ft, 'rgba(255,185,96,.55)', 1, [3,4]));
+        R.results.slice(1,5).forEach(x => polyline(R.paths[String(x.n)], ft, 'rgba(141,162,200,.6)', 1.2, [5,4]));
+      }
+      polyline(R.paths[String(sel)] || [], ft, '#5B8DEF', 2.2, null, true);
+    }
+    if (!done){
+      R.results.forEach(x => { if (touched.has(x.n)) dotAt(x.n, 3.6, 'rgba(250,250,250,.85)', 'rgba(141,162,200,.9)', 1.5); });
+    } else {
+      // final: only the selected path is coloured (by topic, ringed in blue); everything else stays grey
+      R.results.forEach(x => { if (x.n !== sel) dotAt(x.n, 3, 'rgba(160,160,168,.55)'); });
+      if (showAlt) R.near_miss.forEach(x => { if (x.n !== sel) dotAt(x.n, 2.6, 'rgba(160,160,168,.4)'); });
+      const path = R.paths[String(sel)] || [], segs = Math.max(1, path.length-1);
+      path.forEach((m,i) => {
+        if (i/segs > finalT + 1e-6) return;
+        const last = i === path.length-1, c = TOPIC[topicOf(m)] || '#FAFAFA';
+        dotAt(m, last ? 5.2 : 4, c, last ? '#FAFAFA' : '#5B8DEF', last ? 2 : 1.6);
+      });
+    }
+    drawPulses(now);
+    const qp = proj(R.query_xyz[0], R.query_xyz[1], R.query_xyz[2]);
+    if (qp){
+      ctx.beginPath(); ctx.arc(qp.x,qp.y,Math.max(5,7*qp.s),0,6.2832); ctx.strokeStyle='rgba(250,250,250,.9)'; ctx.lineWidth=1.4; ctx.stroke();
+      ctx.beginPath(); ctx.arc(qp.x,qp.y,2,0,6.2832); ctx.fillStyle='#fff'; ctx.fill();
+    }
+    const wanted = [];
+    if (qp) wanted.push({ key:'q', xy:qp, cls:'q', html:'<i>Your search</i>(approx. position)' });
+    const e0 = R.steps[0].node; wanted.push({ key:'entry', n:e0, html:'<i>Start</i>'+esc(ttl(e0)) });
+    if (!done){ const s = R.steps[idx]; if (s.node !== e0) wanted.push({ key:'cur', n:s.node, html:'<i>Now</i>'+esc(ttl(s.node)) }); }
+    else {
+      R.results.slice(0,5).forEach((x,i) => wanted.push({ key:'r'+x.n, n:x.n, cls: x.n===sel?'best':'', html:`<i>${i+1}</i>${esc(x.title.slice(0,32))}` }));
+      if (!R.results.slice(0,5).some(x => x.n === sel)){
+        const c = R.near_miss.find(x=>x.n===sel) || R.results.find(x=>x.n===sel); if (c) wanted.push({ key:'r'+sel, n:sel, cls:'best', html:esc(c.title.slice(0,32)) });
+      }
+    }
+    placeLabels(wanted);
+    if (!done){
+      const [k,t] = stepText(R.steps[idx]);
+      $('narr-k').textContent = k; $('narr-c').textContent = `${idx+1} / ${A.count} · looked at ${fmt(touched.size)} of ${fmt(R.documents)}`;
+      $('narr-t').innerHTML = t; $('barfill').style.width = (stepF/A.count*100) + '%';
+    } else {
+      $('narr-k').textContent = 'Search complete';
+      $('narr-c').textContent = `${(R.paths[String(sel)]||[]).length-1} hops · looked at ${fmt(R.visited_layer0)} of ${fmt(R.documents)}`;
+      $('narr-t').innerHTML = `Best match: <em>“${esc(R.results[0].title)}”</em> (similarity ${R.results[0].score.toFixed(2)}). The blue line is the route to the selected result.`;
+      $('barfill').style.width = '100%';
+    }
+  } else placeLabels([]);
+  if (!drag && lastProj){
+    let best = -1, bd = 100;
+    for (let n = 0; n < N; n++){ const p = lastProj[n]; if (!p) continue; const d = (p.x-mouse.x)**2 + (p.y-mouse.y)**2; if (d < bd){ bd = d; best = n; } }
+    hover = best;
+  }
+  const tip = $('tip');
+  if (hover >= 0 && !drag && !(panelOn && mouse.x > W - 370)){
+    tip.style.display = 'block'; tip.style.left = (mouse.x+14)+'px'; tip.style.top = (mouse.y+14)+'px';
+    const sc = R && A.dmap.has(hover) ? ` · similarity ${sim(A.dmap.get(hover))}` : '';
+    tip.innerHTML = esc(ttl(hover)) + `<i>${esc(topicOf(hover))} · document #${P.ids[hover]}${sc}</i>`;
+  } else tip.style.display = 'none';
+}
+
+/* ---------------- controls ---------------- */
+const submit = () => runSearch($('q').value);
+$('go').addEventListener('click', submit);
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape'){ $('q').blur(); closeBar(); } });
+addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); openBar(); } });
+$('replay').addEventListener('click', () => { if (!R) return; stepF = 0; finalT = 0; playing = true; lastIdx = -1; wasDone = false; });
+$('skip').addEventListener('click', () => { if (!R) return; stepF = A.count; finalT = 1; playing = false; });
+$('reset').addEventListener('click', () => { cam.tX = CAM0.rotX; cam.tY = CAM0.rotY; cam.z = CAM0.z; });
+[['sp1',1],['sp2',2],['sp4',4]].forEach(([id,v]) => $(id).addEventListener('click', () => { speed = v; ['sp1','sp2','sp4'].forEach(i => $(i).classList.toggle('on', i === id)); }));
+$('topic').addEventListener('click', () => { useTopic = !useTopic; $('topic').classList.toggle('on', useTopic); });
+$('kbd').textContent = /Mac/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
+
+/* ---------------- boot ---------------- */
+
+/* ---------------- Add information column ---------------- */
+const MOVES = [], EDGES = [], LOGS = [], STG = [{},{},{},{}];
+const ease = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+let colOpen = false, ctab = 'add', cTopic = '', autoHeal = false, cBusy = false, INFO = null, lastHealth = null, colInit = false, healTimer = null, healElapsed = '';
+const CTOPICS = { world:'World', sports:'Sports', business:'Business', scitech:'Sci/Tech' };
+const STG_DEFAULT = ['Measure quality and sample rows against their text','Pick the fix from the evidence','Re-embed only the bad rows from their text','Re-check, or roll back if it did not help'];
+const STG_NAME = ['Check','Diagnose','Repair','Verify'];
+const humanIssue = i => i.replace(/_/g,' ').toLowerCase();
+function clog(msg, cls){ LOGS.unshift({ t: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}), msg, cls: cls||'' }); if (ctab === 'log') renderCol(); }
+async function capi(path, body){ const r = await fetch(path, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body||{}) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || j.detail || r.status); return j; }
+function cgauge(i, val, text, cls){ $('cv'+i).textContent = text; $('cb'+i).style.width = Math.max(2, Math.min(100, val*100)) + '%'; $('cg'+i).className = 'cg ' + (cls||''); }
+function showHealth(h){
+  if (!h) return; lastHealth = h;
+  $('cstat').innerHTML = `<span class="pill ${h.status === 'HEALTHY' ? 'ok' : 'warn'}">${h.status.toLowerCase()}</span>`;
+  cgauge(1, h.recall, h.recall.toFixed(2), h.recall >= .95 ? 'ok' : 'bad');
+  const s = h.sentinel ?? 0; cgauge(2, Math.min(1, s/20), s.toFixed(1) + '%', s > 0 ? 'bad' : 'ok');
+  cgauge(3, h.ann ?? 1, (h.ann ?? 1).toFixed(2), (h.ann ?? 1) >= .95 ? 'ok' : 'bad');
+  $('cissues').innerHTML = h.issues.map(i => `<span class="pill" style="color:var(--bad);border-color:rgba(251,113,133,.3)">${humanIssue(i)}</span>`).join('') || '<span class="pill ok">no issues found</span>';
+  badge();
+}
+function badge(){ const dirty = P && P.flag.some(f => f === 1) || (lastHealth && lastHealth.status !== 'HEALTHY'); $('addbadge').style.display = dirty ? 'block' : 'none'; }
+function setCBusy(msg){ cBusy = !!msg; $('cbusy').style.display = msg ? 'flex' : 'none'; if (msg) $('cbusy-t').textContent = msg; document.querySelectorAll('#cb button').forEach(b => { if (!b.dataset.keep) b.disabled = cBusy; }); }
+function stg(i, state, text){ STG[i] = { state, text }; if (ctab === 'heal') renderCol(); }
+function resetStg(){ for (let i = 0; i < 4; i++) STG[i] = { state:'', text: STG_DEFAULT[i] }; }
+resetStg();
+
+function renderCol(){
+  document.querySelectorAll('#ctabs button').forEach(b => b.classList.toggle('on', b.dataset.ct === ctab));
+  const body = $('cb'), keep = body.scrollTop, draft = $('newtext') ? $('newtext').value : '', draftCat = $('newcat') ? $('newcat').value : '';
+  if (ctab === 'add'){
+    const pool = INFO ? Object.values(INFO.pool_left).reduce((a,b) => a+b, 0) : 0;
+    body.innerHTML = `
+      <div class="lbl">Add your own text</div>
+      <textarea id="newtext" class="in" placeholder="Paste a document. Separate several documents with a blank line."></textarea>
+      <div class="crow"><input id="newcat" class="in" list="cats" placeholder="Category, e.g. sports" style="flex:1"><datalist id="cats">${(INFO ? INFO.categories : []).map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
+      <button class="cbtn p" id="doadd">Add to the database</button>
+      <div class="cnote">Each text is embedded with <b>${esc(META.model)}</b>, stored in Postgres, linked into the search graph and placed on the map. Then the monitor checks health.</div>
+      ${pool ? `<div class="lbl" style="margin-top:20px">Or add sample articles</div>
+      <div class="tpills" id="tp"><button data-tp="" class="${cTopic===''?'on':''}">Any topic</button>${Object.keys(INFO.pool_left).map(c => `<button data-tp="${c}" class="${cTopic===c?'on':''}">${CTOPICS[c]||c}</button>`).join('')}</div>
+      <div class="crow"><button class="cbtn" id="s100">+ 100</button><button class="cbtn" id="s300">+ 300</button></div>
+      <div class="cnote">${fmt(pool)} unused sample articles left.</div>` : ''}
+      ${INFO && INFO.faults_enabled ? `<div class="lbl" style="margin-top:20px">Demo: simulate a failure</div>
+      <button class="cbtn f" id="sbad">+ 300 with the wrong embedder</button>
+      <div class="cnote">Embeds a batch with <b>${esc(INFO.other_model)}</b> but labels it as ${esc(META.model)}: a silent failure. The healer should find and repair it. Only on a scratch database.</div>` : ''}
+      <div class="legend2" style="margin-top:14px"><span><i style="background:transparent;border:2px solid var(--amber)"></i>new, not yet verified</span><span><i style="background:var(--bad)"></i>found corrupted</span><span><i style="background:transparent;border:2px solid var(--accent)"></i>repaired</span></div>`;
+    if ($('newtext')) $('newtext').value = draft; if ($('newcat')) $('newcat').value = draftCat;
+  } else if (ctab === 'heal'){
+    body.innerHTML = `
+      <div class="lbl">What the healer does</div>
+      ${STG.map((x,i) => `<div class="cstg ${x.state||''}"><span class="d"></span><div><div class="n">${STG_NAME[i]}</div><div class="s">${esc(x.text||STG_DEFAULT[i])}</div></div></div>`).join('')}
+      <div class="crow"><button class="cbtn p" id="doheal">Run healer</button><span class="cnote" id="helapsed" style="margin:0">${healElapsed}</span></div>
+      <div class="ctog ${autoHeal?'on':''}" id="doauto"><span class="csw"></span>Heal automatically after each add</div>
+      <div class="cnote"><b>Drift</b> is measured with fixed test queries, a sample of rows re-embedded from their text, version labels and index accuracy. New documents are not drift. The healer rewrites only rows whose vectors disagree with their text, then verifies, or rolls back.</div>
+      <div class="cnote">Sampling is probabilistic (reliable from about 2% of rows): a pass can miss it, in which case run it again.</div>`;
+  } else {
+    body.innerHTML = LOGS.length ? LOGS.map(l => `<div class="cev ${l.cls}"><time>${l.t}</time>${l.msg}</div>`).join('') : '<div class="cnote">Nothing yet. Add some information to see what the database does.</div>';
+  }
+  body.scrollTop = keep;
+}
+async function openCol(open){
+  colOpen = open; $('col').classList.toggle('show', open); $('addbtn').classList.toggle('on', open);
+  document.documentElement.style.setProperty('--lc', open ? '430px' : '18px');
+  if (open && !colInit){
+    colInit = true; try{ INFO = await (await fetch('/api/info')).json(); renderCol(); const r = await capi('/api/health'); showHealth(r.health); clog(`Monitor check: <b>${r.health.status.toLowerCase()}</b>${r.health.issues.length ? ' — ' + r.health.issues.map(humanIssue).join(', ') : ', nothing to fix'}`, r.health.status === 'HEALTHY' ? 'ok' : 'warn'); }
+    catch(e){ clog('Error: ' + esc(e.message), 'bad'); }
+  }
+}
+async function checkHealth(label){
+  const r = await capi('/api/health'); showHealth(r.health);
+  clog(`${label}: <b>${r.health.status.toLowerCase()}</b>${r.health.issues.length ? ' — ' + r.health.issues.map(humanIssue).join(', ') : ', nothing to fix'}`, r.health.status === 'HEALTHY' ? 'ok' : 'warn');
+  return r.health;
+}
+async function addInfo(payload, faulty){
+  setCBusy(faulty ? 'Embedding with the wrong model…' : 'Embedding and inserting…');
+  try{
+    const r = await capi('/api/ingest', payload);
+    const t0 = performance.now(), per = Math.min(2600, 700 + r.new.length * 9) / r.new.length, base = P.xyz.length;
+    r.new.forEach((d, k) => {
+      const at = t0 + k*per, i = base + k;
+      P.xyz[i] = d.xyz; P.category[i] = d.cat; P.title[i] = d.title; P.ids[i] = d.id; P.flag[i] = 1; P.born[i] = at;
+      (d.links||[]).forEach(b => EDGES.push({ a:i, b, t0:at, dur:1800, kind:'link' }));
+      (d.touched||[]).forEach(b => EDGES.push({ a:i, b, t0:at+120, dur:1100, kind:'touch' }));
+      (d.pruned||[]).forEach(([c, rr]) => EDGES.push({ a:c, b:rr, t0:at+200, dur:1300, kind:'prune' }));
+    });
+    if (INFO){ INFO.documents = r.total; if (payload.category && !INFO.categories.includes(payload.category)) INFO.categories.push(payload.category); if (!payload.texts) for (const c in INFO.pool_left) INFO.pool_left[c] = Math.max(0, INFO.pool_left[c] - r.new.filter(x => x.cat === c).length); }
+    META.documents = r.total;
+    clog(`Added <b>${r.count}</b> ${faulty ? `documents embedded by <b>${esc(r.model)}</b> but labelled as ${esc(META.model)}` : 'documents'} in ${r.seconds}s. The graph reorganised: <b>${fmt(r.neighbour_lists_updated)}</b> neighbour lists updated, <b>${fmt(r.links_pruned)}</b> old links dropped.`, faulty ? 'warn' : '');
+    setCBusy('The monitor is checking the database…');
+    const h = await checkHealth('Monitor check');
+    setCBusy(null); renderCol();
+    if (autoHeal && h.status !== 'HEALTHY') await healNow();
+  }catch(e){ setCBusy(null); clog('Error: ' + esc(e.message), 'bad'); ctab = 'log'; renderCol(); }
+}
+async function healNow(){
+  const prior = lastHealth; ctab = 'heal'; setCBusy('Healer running…'); resetStg();
+  stg(0, 'run', 'Healer is checking quality and sampling rows against their text…'); stg(1, 'run', 'Then it picks a fix from what it finds…'); stg(2, 'run', 'Repairs scan every row against its text, about a minute at this size.');
+  const t0 = performance.now(); healTimer = setInterval(() => { healElapsed = ((performance.now()-t0)/1000).toFixed(0) + ' s'; const el = $('helapsed'); if (el) el.textContent = healElapsed; }, 500);
+  try{
+    const r = await capi('/api/heal'); const c0 = r.cycles[0], acts = c0.actions.map(humanIssue);
+    if (c0.before) showHealth(c0.before);
+    const found = c0.before ? c0.before.issues.map(humanIssue).join(', ') : '';
+    stg(0, 'done', c0.before ? `${c0.before.status.toLowerCase()}${found ? ': ' + found : ''}` : 'no result');
+    if (!acts.length && !r.repaired.length){
+      stg(1, 'skip', 'Nothing actionable found'); stg(2, 'skip', 'No repair'); stg(3, 'skip', 'Nothing to verify');
+      const missed = prior && prior.issues.length;
+      clog(missed ? `Healer finished in ${r.seconds}s and <b>did nothing</b>: its own sample of rows did not catch the bad ones this time. Detection by sampling is probabilistic (reliable from roughly 2% of rows). The new rows are still unverified; run the healer again.` : `Healer finished in ${r.seconds}s: nothing to fix, so it did nothing.`, missed ? 'warn' : 'ok');
+      return;
+    }
+    stg(1, 'done', acts.length ? 'Chose: ' + acts.join(', ') : 'Matched evidence to a repair');
+    stg(2, 'done', r.repaired.length ? `Rewrote ${r.repaired.length} rows from their text` : 'No rows needed changes');
+    stg(3, 'run', 'Re-checking…'); await new Promise(res => setTimeout(res, 400));
+    if (c0.after) showHealth(c0.after);
+    stg(3, 'done', c0.outcome === 'SUCCEEDED' ? 'Healthy again' : c0.outcome.toLowerCase().replace(/_/g,' '));
+    const idx = new Map(); P.ids.forEach((id, n) => idx.set(id, n)); const start = performance.now() + 400;
+    r.repaired.forEach((m, k) => { const n = idx.get(m.id); if (n === undefined) return; P.flag[n] = 2; MOVES.push({ n, from:[...P.xyz[n]], to:m.to, t0: start + 900 + (k % 60) * 12 }); });
+    for (let n = 0; n < P.flag.length; n++) if (P.flag[n] === 1) P.flag[n] = 0;
+    const disp = r.repaired.length ? r.repaired.reduce((a, m) => a + Math.hypot(m.to[0]-m.from[0], m.to[1]-m.from[1], m.to[2]-m.from[2]), 0) / r.repaired.length : 0;
+    clog(`Healer finished in ${r.seconds}s: <b>${c0.outcome.toLowerCase()}</b>${r.repaired.length ? `, ${r.repaired.length} corrupted rows rewritten from their text` : ''}.`, 'ok');
+    if (r.repaired.length) clog(`Look closely: on the map these rows moved only <b>${disp.toFixed(0)}</b> units on average (the whole map is about 640 across). A 3-D picture cannot show that their vectors were wrong, which is why the healer checks vectors against the text.`);
+    badge();
+  }catch(e){ clog('Error: ' + esc(e.message), 'bad'); }
+  finally { clearInterval(healTimer); setCBusy(null); renderCol(); }
+}
+$('addbtn').onclick = () => openCol(!colOpen);
+$('ctabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; ctab = b.dataset.ct; renderCol(); };
+$('cb').onclick = e => {
+  const t = e.target.closest('button, #doauto'); if (!t || cBusy && t.id !== 'doauto') return;
+  if (t.dataset.tp !== undefined){ cTopic = t.dataset.tp; renderCol(); return; }
+  if (t.id === 'doadd'){ const txt = $('newtext').value.split(/\n\s*\n/).map(x => x.trim()).filter(Boolean); if (!txt.length){ clog('Paste some text first.', 'warn'); ctab = 'log'; renderCol(); return; } addInfo({ texts: txt, category: $('newcat').value.trim() || 'other' }, false); }
+  else if (t.id === 's100') addInfo({ count: 100, topic: cTopic || null }, false);
+  else if (t.id === 's300') addInfo({ count: 300, topic: cTopic || null }, false);
+  else if (t.id === 'sbad') addInfo({ count: 300, faulty: true, topic: cTopic || null }, true);
+  else if (t.id === 'doheal') healNow();
+  else if (t.id === 'doauto'){ autoHeal = !autoHeal; renderCol(); }
+};
+
+(async function boot(){
+  try{
+    const [m, p] = await Promise.all([fetch('/api/meta').then(r => r.json()), fetch('/api/points').then(r => r.json())]);
+    META = m; P = p; cx = W/2; P.flag = new Array(p.xyz.length).fill(0); P.born = new Array(p.xyz.length).fill(-1e9); renderCol();
+    $('stale').style.display = m.stale ? 'block' : 'none';
+    const sg = $('sugg'); m.suggestions.forEach(s => { const b = document.createElement('button'); b.textContent = s; b.onclick = () => { $('q').value = s; submit(); }; sg.appendChild(b); });
+    $('legend').innerHTML = Object.entries(TOPIC).map(([k,c]) => `<span><i style="background:${c}"></i>${k}</span>`).join('');
+    requestAnimationFrame(frame);
+    // shareable links: ?q=text  [&step=N freezes mid-search]  [&final=1 jumps to the finished trace]  [&tab=path|checks]
+    const u = new URLSearchParams(location.search);
+    if (u.get('instant')) document.head.insertAdjacentHTML('beforeend','<style>*{transition:none!important}</style>');  // for screenshots
+    if (u.get('q')){
+      $('q').value = u.get('q'); await runSearch(u.get('q'));
+      if (R && u.get('tab')){ tab = u.get('tab'); renderPanel(); }
+      if (R && u.get('step')){ stepF = +u.get('step'); playing = false; }
+      if (R && u.get('final')){ stepF = A.count; finalT = 1; playing = false; }
+    }
+  }catch(e){ setStatus('Could not load the database: ' + e.message, true); }
+})();
+</script>
+</body>
+</html>
