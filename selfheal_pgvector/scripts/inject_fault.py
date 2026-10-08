@@ -10,6 +10,8 @@ from config import DB_DSN
 from load_data import vec_to_pg
 
 INCOMPATIBLE_VERSION = "simulated-incompatible-v0"
+# Fault types whose original vectors live in fault_embedding_backups.
+RESTORABLE = ("INCOMPATIBLE_EMBEDDINGS", "CROSS_MODEL", "VECTOR_NOISE")
 
 
 def parse_vector(value):
@@ -133,7 +135,7 @@ def restore_active_fault():
             raise RuntimeError("there is no active fault to restore")
         run_id, fault_type, _parameters, affected_rows, _started_at = run
 
-        if fault_type == "INCOMPATIBLE_EMBEDDINGS":
+        if fault_type in RESTORABLE:
             cur.execute(
                 """UPDATE documents AS d
                    SET embedding = backup.embedding,

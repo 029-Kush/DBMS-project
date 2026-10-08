@@ -1,0 +1,326 @@
+[
+  {
+    "fault": "cross-model 10% (labelled)",
+    "strategy": "targeted",
+    "seconds": 17.1,
+    "docs_embedded": 804,
+    "rows_updated": 500,
+    "wal_mb": 4.9,
+    "reader": {
+      "ops": 809,
+      "errors": 0,
+      "max_ms": 7.8,
+      "p99_ms": 3.4,
+      "median_ms": 1.56
+    },
+    "writer": {
+      "ops": 800,
+      "errors": 0,
+      "max_ms": 20.0,
+      "p99_ms": 5.7,
+      "median_ms": 1.61
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "cross-model 10% (labelled)",
+    "strategy": "blanket",
+    "seconds": 111.5,
+    "docs_embedded": 5076,
+    "rows_updated": 5000,
+    "wal_mb": 52.7,
+    "reader": {
+      "ops": 5049,
+      "errors": 0,
+      "max_ms": 397.8,
+      "p99_ms": 5.1,
+      "median_ms": 1.73
+    },
+    "writer": {
+      "ops": 5048,
+      "errors": 0,
+      "max_ms": 417.8,
+      "p99_ms": 4.4,
+      "median_ms": 1.66
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "cross-model 50% (labelled)",
+    "strategy": "targeted",
+    "seconds": 63.3,
+    "docs_embedded": 2804,
+    "rows_updated": 2500,
+    "wal_mb": 20.4,
+    "reader": {
+      "ops": 2899,
+      "errors": 0,
+      "max_ms": 11.6,
+      "p99_ms": 4.9,
+      "median_ms": 1.67
+    },
+    "writer": {
+      "ops": 2897,
+      "errors": 0,
+      "max_ms": 11.9,
+      "p99_ms": 5.0,
+      "median_ms": 1.65
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 0.992,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "cross-model 50% (labelled)",
+    "strategy": "blanket",
+    "seconds": 108.7,
+    "docs_embedded": 5076,
+    "rows_updated": 5000,
+    "wal_mb": 43.3,
+    "reader": {
+      "ops": 4934,
+      "errors": 0,
+      "max_ms": 376.1,
+      "p99_ms": 4.1,
+      "median_ms": 1.73
+    },
+    "writer": {
+      "ops": 4931,
+      "errors": 0,
+      "max_ms": 369.4,
+      "p99_ms": 3.8,
+      "median_ms": 1.64
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 0.992,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "silent noise 10%",
+    "strategy": "targeted",
+    "seconds": 115.0,
+    "docs_embedded": 5304,
+    "rows_updated": 500,
+    "wal_mb": 6.1,
+    "reader": {
+      "ops": 5253,
+      "errors": 0,
+      "max_ms": 9.3,
+      "p99_ms": 4.1,
+      "median_ms": 1.68
+    },
+    "writer": {
+      "ops": 5244,
+      "errors": 0,
+      "max_ms": 30.6,
+      "p99_ms": 4.1,
+      "median_ms": 1.66
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "silent noise 10%",
+    "strategy": "blanket",
+    "seconds": 111.1,
+    "docs_embedded": 5076,
+    "rows_updated": 5000,
+    "wal_mb": 39.1,
+    "reader": {
+      "ops": 5009,
+      "errors": 0,
+      "max_ms": 524.5,
+      "p99_ms": 5.1,
+      "median_ms": 1.8
+    },
+    "writer": {
+      "ops": 5005,
+      "errors": 0,
+      "max_ms": 518.5,
+      "p99_ms": 4.9,
+      "median_ms": 1.71
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "index degraded (m=4)",
+    "strategy": "targeted",
+    "seconds": 5.3,
+    "docs_embedded": 304,
+    "rows_updated": 0,
+    "wal_mb": 9.5,
+    "reader": {
+      "ops": 270,
+      "errors": 0,
+      "max_ms": 7.7,
+      "p99_ms": 3.2,
+      "median_ms": 1.19
+    },
+    "writer": {
+      "ops": 266,
+      "errors": 0,
+      "max_ms": 9.7,
+      "p99_ms": 4.5,
+      "median_ms": 1.42
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "index degraded (m=4)",
+    "strategy": "blanket",
+    "seconds": 109.8,
+    "docs_embedded": 5076,
+    "rows_updated": 5000,
+    "wal_mb": 67.2,
+    "reader": {
+      "ops": 5094,
+      "errors": 0,
+      "max_ms": 528.1,
+      "p99_ms": 4.1,
+      "median_ms": 1.2
+    },
+    "writer": {
+      "ops": 4950,
+      "errors": 0,
+      "max_ms": 508.3,
+      "p99_ms": 4.6,
+      "median_ms": 1.71
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "index degraded (m=4)",
+    "strategy": "manual-expert",
+    "seconds": 0.4,
+    "docs_embedded": 76,
+    "rows_updated": 0,
+    "wal_mb": 9.3,
+    "reader": {
+      "ops": 40,
+      "errors": 0,
+      "max_ms": 8.1,
+      "p99_ms": 4.5,
+      "median_ms": 0.81
+    },
+    "writer": {
+      "ops": 25,
+      "errors": 0,
+      "max_ms": 326.6,
+      "p99_ms": 18.0,
+      "median_ms": 0.89
+    },
+    "status_before": "CRITICAL",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "table bloat",
+    "strategy": "targeted",
+    "seconds": 5.0,
+    "docs_embedded": 304,
+    "rows_updated": 0,
+    "wal_mb": 0.8,
+    "reader": {
+      "ops": 254,
+      "errors": 0,
+      "max_ms": 9.7,
+      "p99_ms": 2.9,
+      "median_ms": 1.51
+    },
+    "writer": {
+      "ops": 251,
+      "errors": 0,
+      "max_ms": 11.8,
+      "p99_ms": 5.1,
+      "median_ms": 1.4
+    },
+    "status_before": "DEGRADED",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "table bloat",
+    "strategy": "blanket",
+    "seconds": 110.0,
+    "docs_embedded": 5076,
+    "rows_updated": 5000,
+    "wal_mb": 39.3,
+    "reader": {
+      "ops": 4971,
+      "errors": 0,
+      "max_ms": 431.6,
+      "p99_ms": 4.9,
+      "median_ms": 1.78
+    },
+    "writer": {
+      "ops": 4962,
+      "errors": 0,
+      "max_ms": 413.1,
+      "p99_ms": 4.4,
+      "median_ms": 1.69
+    },
+    "status_before": "DEGRADED",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  },
+  {
+    "fault": "table bloat",
+    "strategy": "manual-expert",
+    "seconds": 0.4,
+    "docs_embedded": 76,
+    "rows_updated": 0,
+    "wal_mb": 18.8,
+    "reader": {
+      "ops": 26,
+      "errors": 0,
+      "max_ms": 339.0,
+      "p99_ms": 9.5,
+      "median_ms": 0.63
+    },
+    "writer": {
+      "ops": 25,
+      "errors": 0,
+      "max_ms": 347.6,
+      "p99_ms": 11.7,
+      "median_ms": 0.97
+    },
+    "status_before": "DEGRADED",
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "inconsistent_rows_after": 0
+  }
+]

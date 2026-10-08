@@ -1,0 +1,70 @@
+[
+  {
+    "fault": "cross-model labelled",
+    "pct": 2.0,
+    "seed": 1,
+    "issues": [
+      "VERSION_SKEW"
+    ],
+    "recall": 0.967,
+    "shift": 0.1,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 2.0,
+    "seed": 2,
+    "issues": [
+      "VERSION_SKEW"
+    ],
+    "recall": 0.983,
+    "shift": 0.0,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 2.0,
+    "seed": 3,
+    "issues": [
+      "VERSION_SKEW"
+    ],
+    "recall": 1.0,
+    "shift": 0.0,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 5.0,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.917,
+    "shift": 1.8,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 5.0,
+    "seed": 2,
+    "issues": [
+      "VERSION_SKEW"
+    ],
+    "recall": 0.967,
+    "shift": 0.5,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 5.0,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.917,
+    "shift": 0.3,
+    "sentinel_pct": 0.0
+  }
+]

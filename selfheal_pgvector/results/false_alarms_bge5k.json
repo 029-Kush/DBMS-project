@@ -1,0 +1,191 @@
+{
+  "summary": {
+    "cycles": 20,
+    "cycles_with_action_or_escalation": 0,
+    "issue_histogram": {},
+    "naive_recall_min_under_load": 0.7583333333333333,
+    "naive_would_have_alarmed_cycles": 12
+  },
+  "rows": [
+    {
+      "cycle": 1,
+      "load": false,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 1.0,
+      "docs": 5000
+    },
+    {
+      "cycle": 2,
+      "load": false,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 1.0,
+      "docs": 5000
+    },
+    {
+      "cycle": 3,
+      "load": false,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 1.0,
+      "docs": 5000
+    },
+    {
+      "cycle": 4,
+      "load": false,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 1.0,
+      "docs": 5000
+    },
+    {
+      "cycle": 5,
+      "load": false,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 1.0,
+      "docs": 5000
+    },
+    {
+      "cycle": 6,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 1.0,
+      "docs": 5100
+    },
+    {
+      "cycle": 7,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.992,
+      "docs": 5200
+    },
+    {
+      "cycle": 8,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.975,
+      "docs": 5300
+    },
+    {
+      "cycle": 9,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.942,
+      "docs": 5400
+    },
+    {
+      "cycle": 10,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.908,
+      "docs": 5500
+    },
+    {
+      "cycle": 11,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.9,
+      "docs": 5600
+    },
+    {
+      "cycle": 12,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.883,
+      "docs": 5700
+    },
+    {
+      "cycle": 13,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.867,
+      "docs": 5800
+    },
+    {
+      "cycle": 14,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.858,
+      "docs": 5900
+    },
+    {
+      "cycle": 15,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.85,
+      "docs": 6000
+    },
+    {
+      "cycle": 16,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.842,
+      "docs": 6100
+    },
+    {
+      "cycle": 17,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.8,
+      "docs": 6200
+    },
+    {
+      "cycle": 18,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.783,
+      "docs": 6300
+    },
+    {
+      "cycle": 19,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.758,
+      "docs": 6400
+    },
+    {
+      "cycle": 20,
+      "load": true,
+      "outcome": "NO_ACTION",
+      "status": "HEALTHY",
+      "issues": [],
+      "naive_canary_recall": 0.758,
+      "docs": 6500
+    }
+  ]
+}

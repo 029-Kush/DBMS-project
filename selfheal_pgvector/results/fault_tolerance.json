@@ -1,0 +1,245 @@
+[
+  {
+    "test": "crash right after opening the event",
+    "pass": true,
+    "failures": [],
+    "seconds": 1.9,
+    "info": {
+      "followup": {
+        "outcome": "SUCCEEDED",
+        "recovered": [
+          98
+        ],
+        "event_id": 99,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "crash mid re-embed (after 1 of 3 batches)",
+    "pass": true,
+    "failures": [],
+    "seconds": 2.0,
+    "info": {
+      "followup": {
+        "outcome": "SUCCEEDED",
+        "recovered": [
+          100
+        ],
+        "event_id": 101,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "crash after repair, before verification",
+    "pass": true,
+    "failures": [],
+    "seconds": 2.1,
+    "info": {
+      "followup": {
+        "outcome": "SUCCEEDED",
+        "recovered": [
+          102
+        ],
+        "event_id": 103,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "crash mid index build (leftover _new index)",
+    "pass": true,
+    "failures": [],
+    "seconds": 2.8,
+    "info": {
+      "followup": {
+        "outcome": "SUCCEEDED",
+        "recovered": [
+          104
+        ],
+        "event_id": 105,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "recovery restores exact pre-heal state (mid re-embed)",
+    "pass": true,
+    "failures": [],
+    "seconds": 1.0,
+    "info": {
+      "backed_up_rows_before_recovery": 40
+    }
+  },
+  {
+    "test": "recovery restores exact pre-heal state (after repair)",
+    "pass": true,
+    "failures": [],
+    "seconds": 1.1,
+    "info": {
+      "backed_up_rows_before_recovery": 120
+    }
+  },
+  {
+    "test": "genuine SIGKILL mid re-embed",
+    "pass": true,
+    "failures": [],
+    "seconds": 2.2,
+    "info": {
+      "followup": {
+        "outcome": "SUCCEEDED",
+        "recovered": [
+          108
+        ],
+        "event_id": 109,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "two healers at once",
+    "pass": true,
+    "failures": [],
+    "seconds": 9.2,
+    "info": {
+      "A": {
+        "outcome": "SUCCEEDED",
+        "recovered": [],
+        "event_id": 110,
+        "error": null
+      },
+      "B": {
+        "outcome": "SKIPPED",
+        "recovered": [],
+        "event_id": null,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "postgres restart mid repair",
+    "pass": true,
+    "failures": [],
+    "seconds": 14.0,
+    "info": {
+      "interrupted": {
+        "outcome": "INTERRUPTED",
+        "recovered": [],
+        "event_id": 111,
+        "error": "connection already closed"
+      },
+      "followup": {
+        "outcome": "SUCCEEDED",
+        "recovered": [
+          111
+        ],
+        "event_id": 112,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "backend terminated mid repair",
+    "pass": true,
+    "failures": [],
+    "seconds": 14.1,
+    "info": {
+      "interrupted": {
+        "outcome": "INTERRUPTED",
+        "recovered": [],
+        "event_id": 113,
+        "error": "connection already closed"
+      },
+      "followup": {
+        "outcome": "SUCCEEDED",
+        "recovered": [
+          113
+        ],
+        "event_id": 114,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "database down when healer starts",
+    "pass": true,
+    "failures": [],
+    "seconds": 3.4,
+    "info": {
+      "during_outage": {
+        "outcome": "DB_UNAVAILABLE",
+        "recovered": [],
+        "event_id": null,
+        "error": "connection to server at \"127.0.0.1\", port 5433 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?\n"
+      }
+    }
+  },
+  {
+    "test": "monitor loop survives an outage",
+    "pass": true,
+    "failures": [],
+    "seconds": 42.6,
+    "info": {}
+  },
+  {
+    "test": "concurrent writer holds a row lock",
+    "pass": true,
+    "failures": [],
+    "seconds": 7.1,
+    "info": {
+      "waited_s": 5.8
+    }
+  },
+  {
+    "test": "rollback never clobbers a user's later update",
+    "pass": true,
+    "failures": [],
+    "seconds": 0.3,
+    "info": {
+      "restored": 119,
+      "skipped": 1
+    }
+  },
+  {
+    "test": "user edits a row while healer is embedding",
+    "pass": true,
+    "failures": [],
+    "seconds": 22.0,
+    "info": {
+      "write_latency_s": 0.014,
+      "first": {
+        "outcome": "SUCCEEDED",
+        "recovered": [],
+        "event_id": 120,
+        "error": null
+      },
+      "followup": {
+        "outcome": "NO_ACTION",
+        "recovered": [],
+        "event_id": null,
+        "error": null
+      }
+    }
+  },
+  {
+    "test": "failure memory survives restart and expires",
+    "pass": true,
+    "failures": [],
+    "seconds": 2.0,
+    "info": {}
+  },
+  {
+    "test": "idempotent: repeated cycles",
+    "pass": true,
+    "failures": [],
+    "seconds": 2.8,
+    "info": {
+      "outcomes": [
+        "SUCCEEDED",
+        "NO_ACTION",
+        "NO_ACTION"
+      ]
+    }
+  }
+]
