@@ -6,6 +6,7 @@
     .\demo.ps1 baseline    # load_data + build_canary + eval_recall baseline
     .\demo.ps1 phase2      # migrate safely + run one observable health check
     .\demo.ps1 phase3-drift # complete reversible model-drift experiment
+    .\demo.ps1 phase4-heal # break the DB six ways and let the healer repair it (UNTESTED on Windows)
     .\demo.ps1 faults      # inject version-skew + index-drop, eval each, restore
     .\demo.ps1 timeline    # print the health_snapshots table
 
@@ -14,7 +15,7 @@
 #>
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet('baseline', 'phase2', 'phase3-drift', 'faults', 'timeline')]
+  [ValidateSet('baseline', 'phase2', 'phase3-drift', 'phase4-heal', 'faults', 'timeline')]
   [string]$Action
 )
 
@@ -28,6 +29,7 @@ $PROJ    = Join-Path $PSScriptRoot '..\selfheal_pgvector' | Resolve-Path | Selec
 $SCRIPTS = Join-Path $PROJ 'scripts'
 $PHASE2  = Join-Path $PROJ 'sql\phase2_migration.sql'
 $PHASE3  = Join-Path $PROJ 'sql\phase3_migration.sql'
+$PHASE4  = Join-Path $PROJ 'sql\phase4_migration.sql'
 
 function Py([string]$file, [string]$arg) {
   Push-Location $SCRIPTS
@@ -66,6 +68,13 @@ switch ($Action) {
     & $psql -h 127.0.0.1 -p 5432 -U svuser -d selfheal -v ON_ERROR_STOP=1 -f $PHASE3
     Write-Host "`n===== reversible incompatible-embedding experiment =====" -ForegroundColor Cyan
     Py 'run_phase3_experiment.py'
+  }
+
+  'phase4-heal' {
+    Write-Host "`n===== apply additive Phase 4 migration =====" -ForegroundColor Cyan
+    & $psql -h 127.0.0.1 -p 5432 -U svuser -d selfheal -v ON_ERROR_STOP=1 -f $PHASE4
+    Write-Host "`n===== inject faults and self-heal =====" -ForegroundColor Cyan
+    Py 'run_phase4_experiment.py'
   }
 
   'faults' {

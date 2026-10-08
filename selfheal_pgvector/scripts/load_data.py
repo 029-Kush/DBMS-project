@@ -4,10 +4,15 @@ from pathlib import Path
 import psycopg2
 from psycopg2.extras import execute_values
 
-from config import DB_DSN, CURRENT_MODEL_VERSION
-from embed_model import fit_and_save
+import os
 
-CORPUS_PATH = Path(__file__).resolve().parent.parent / "data" / "corpus.csv"
+from config import DB_DSN, CURRENT_MODEL_VERSION, EMBEDDER
+from embed_model import fit_and_save, load_embedder
+
+CORPUS_PATH = Path(os.environ.get(
+    "SELFHEAL_CORPUS",
+    Path(__file__).resolve().parent.parent / "data" / "corpus.csv",
+))
 
 
 def load_corpus():
@@ -23,13 +28,17 @@ def main():
     rows = load_corpus()
     texts = [r["body"] for r in rows]
 
-    print(f"Fitting embedding model ({CURRENT_MODEL_VERSION}) on {len(texts)} documents...")
-    model = fit_and_save(texts)
+    if EMBEDDER == "tfidf":
+        print(f"Fitting embedding model ({CURRENT_MODEL_VERSION}) on {len(texts)} documents...")
+        model = fit_and_save(texts)
+    else:
+        print(f"Embedding {len(texts)} documents with {CURRENT_MODEL_VERSION}...")
+        model = load_embedder()
     vectors = model.embed(texts)
 
     conn = psycopg2.connect(DB_DSN)
     cur = conn.cursor()
-    cur.execute("TRUNCATE documents RESTART IDENTITY;")
+    cur.execute("TRUNCATE documents RESTART IDENTITY CASCADE;")
 
     records = [
         (r["category"], r["body"], vec_to_pg(vectors[i]), CURRENT_MODEL_VERSION)

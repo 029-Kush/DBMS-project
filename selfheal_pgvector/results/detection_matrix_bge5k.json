@@ -1,0 +1,886 @@
+[
+  {
+    "fault": "cross-model labelled",
+    "pct": 2,
+    "seed": 1,
+    "issues": [],
+    "recall": 0.967,
+    "shift": 0.1,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 2,
+    "seed": 2,
+    "issues": [],
+    "recall": 0.975,
+    "shift": 0.0,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 2,
+    "seed": 3,
+    "issues": [],
+    "recall": 0.992,
+    "shift": 0.0,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 5,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL"
+    ],
+    "recall": 0.917,
+    "shift": 1.8,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 5,
+    "seed": 2,
+    "issues": [],
+    "recall": 0.967,
+    "shift": 0.5,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 5,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL"
+    ],
+    "recall": 0.925,
+    "shift": 0.3,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 10,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.933,
+    "shift": 0.0,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 10,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.883,
+    "shift": 0.0,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 10,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.867,
+    "shift": 0.6,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 25,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.775,
+    "shift": 0.7,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 25,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.792,
+    "shift": 1.9,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 25,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.725,
+    "shift": 2.6,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 50,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.525,
+    "shift": 2.7,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 50,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.558,
+    "shift": 5.8,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model labelled",
+    "pct": 50,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VERSION_SKEW"
+    ],
+    "recall": 0.492,
+    "shift": 6.9,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 2,
+    "seed": 1,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.967,
+    "shift": 0.1,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 2,
+    "seed": 2,
+    "issues": [],
+    "recall": 0.983,
+    "shift": 0.0,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 2,
+    "seed": 3,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.992,
+    "shift": 0.0,
+    "sentinel_pct": 3.1
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 5,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.908,
+    "shift": 1.8,
+    "sentinel_pct": 9.4
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 5,
+    "seed": 2,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.967,
+    "shift": 0.5,
+    "sentinel_pct": 6.2
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 5,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.925,
+    "shift": 0.3,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 10,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.933,
+    "shift": 0.0,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 10,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.875,
+    "shift": 0.0,
+    "sentinel_pct": 7.8
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 10,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.875,
+    "shift": 0.6,
+    "sentinel_pct": 9.4
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 25,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.775,
+    "shift": 0.7,
+    "sentinel_pct": 20.3
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 25,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.8,
+    "shift": 1.9,
+    "sentinel_pct": 29.7
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 25,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.725,
+    "shift": 2.6,
+    "sentinel_pct": 26.6
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 50,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.517,
+    "shift": 2.7,
+    "sentinel_pct": 53.1
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 50,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.558,
+    "shift": 5.8,
+    "sentinel_pct": 50.0
+  },
+  {
+    "fault": "cross-model silent",
+    "pct": 50,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.492,
+    "shift": 6.9,
+    "sentinel_pct": 43.8
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 2,
+    "seed": 1,
+    "issues": [],
+    "recall": 0.975,
+    "shift": 0.1,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 2,
+    "seed": 2,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.983,
+    "shift": 0.0,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 2,
+    "seed": 3,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 1.0,
+    "shift": 0.0,
+    "sentinel_pct": 3.1
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 5,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.917,
+    "shift": 1.8,
+    "sentinel_pct": 3.1
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 5,
+    "seed": 2,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.975,
+    "shift": 0.5,
+    "sentinel_pct": 6.2
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 5,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.925,
+    "shift": 0.3,
+    "sentinel_pct": 9.4
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 10,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.933,
+    "shift": 0.0,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 10,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.875,
+    "shift": 0.0,
+    "sentinel_pct": 10.9
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 10,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.875,
+    "shift": 0.6,
+    "sentinel_pct": 15.6
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 25,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.775,
+    "shift": 0.7,
+    "sentinel_pct": 34.4
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 25,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.792,
+    "shift": 1.9,
+    "sentinel_pct": 20.3
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 25,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.725,
+    "shift": 2.6,
+    "sentinel_pct": 23.4
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 50,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.517,
+    "shift": 2.7,
+    "sentinel_pct": 51.6
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 50,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.558,
+    "shift": 5.8,
+    "sentinel_pct": 59.4
+  },
+  {
+    "fault": "noise 0.05 silent",
+    "pct": 50,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.492,
+    "shift": 6.9,
+    "sentinel_pct": 54.7
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 2,
+    "seed": 1,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.967,
+    "shift": 0.1,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 2,
+    "seed": 2,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.975,
+    "shift": 0.0,
+    "sentinel_pct": 3.1
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 2,
+    "seed": 3,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.992,
+    "shift": 0.0,
+    "sentinel_pct": 3.1
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 5,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.908,
+    "shift": 1.8,
+    "sentinel_pct": 6.2
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 5,
+    "seed": 2,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.967,
+    "shift": 0.5,
+    "sentinel_pct": 7.8
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 5,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.917,
+    "shift": 0.3,
+    "sentinel_pct": 7.8
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 10,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.942,
+    "shift": 0.0,
+    "sentinel_pct": 12.5
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 10,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.875,
+    "shift": 0.0,
+    "sentinel_pct": 10.9
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 10,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.875,
+    "shift": 0.6,
+    "sentinel_pct": 7.8
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 25,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.775,
+    "shift": 0.7,
+    "sentinel_pct": 21.9
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 25,
+    "seed": 2,
+    "issues": [
+      "INDEX_DEGRADED",
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.792,
+    "shift": 1.9,
+    "sentinel_pct": 29.7
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 25,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.717,
+    "shift": 2.6,
+    "sentinel_pct": 23.4
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 50,
+    "seed": 1,
+    "issues": [
+      "INDEX_DEGRADED",
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.517,
+    "shift": 2.7,
+    "sentinel_pct": 42.2
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 50,
+    "seed": 2,
+    "issues": [
+      "INDEX_DEGRADED",
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.558,
+    "shift": 5.8,
+    "sentinel_pct": 42.2
+  },
+  {
+    "fault": "noise 0.15 silent",
+    "pct": 50,
+    "seed": 3,
+    "issues": [
+      "INDEX_DEGRADED",
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.492,
+    "shift": 6.9,
+    "sentinel_pct": 46.9
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 2,
+    "seed": 1,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.967,
+    "shift": 0.1,
+    "sentinel_pct": 3.1
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 2,
+    "seed": 2,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.975,
+    "shift": 0.0,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 2,
+    "seed": 3,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.992,
+    "shift": 0.0,
+    "sentinel_pct": 4.7
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 5,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL"
+    ],
+    "recall": 0.908,
+    "shift": 1.8,
+    "sentinel_pct": 0.0
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 5,
+    "seed": 2,
+    "issues": [
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.967,
+    "shift": 0.5,
+    "sentinel_pct": 1.6
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 5,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.917,
+    "shift": 0.3,
+    "sentinel_pct": 6.2
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 10,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.933,
+    "shift": 0.0,
+    "sentinel_pct": 4.7
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 10,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.875,
+    "shift": 0.0,
+    "sentinel_pct": 7.8
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 10,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.867,
+    "shift": 0.6,
+    "sentinel_pct": 6.2
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 25,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.775,
+    "shift": 0.7,
+    "sentinel_pct": 32.8
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 25,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.792,
+    "shift": 1.9,
+    "sentinel_pct": 32.8
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 25,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.717,
+    "shift": 2.6,
+    "sentinel_pct": 20.3
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 50,
+    "seed": 1,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.517,
+    "shift": 2.7,
+    "sentinel_pct": 57.8
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 50,
+    "seed": 2,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.558,
+    "shift": 5.8,
+    "sentinel_pct": 48.4
+  },
+  {
+    "fault": "permutation silent",
+    "pct": 50,
+    "seed": 3,
+    "issues": [
+      "LOW_RECALL",
+      "TABLE_BLOAT",
+      "VECTOR_MISMATCH"
+    ],
+    "recall": 0.492,
+    "shift": 6.9,
+    "sentinel_pct": 45.3
+  }
+]

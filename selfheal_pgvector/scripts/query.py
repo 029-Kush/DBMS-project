@@ -4,7 +4,7 @@ import argparse
 import psycopg2
 
 from config import DB_DSN
-from embed_model import TfidfSvdEmbedder
+from embed_model import load_embedder
 from search import search_documents
 
 
@@ -20,7 +20,7 @@ def main():
     if args.top_k < 1:
         raise SystemExit("--top-k must be at least 1")
 
-    model = TfidfSvdEmbedder.load()
+    model = load_embedder()
     conn = psycopg2.connect(DB_DSN)
     cur = conn.cursor()
     try:

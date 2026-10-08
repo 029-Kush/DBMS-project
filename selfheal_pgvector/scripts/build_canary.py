@@ -13,10 +13,14 @@ practice when you don't have external human-labeled relevance judgments:
 the baseline system's own output becomes the ground truth to detect
 future regressions against.
 """
+import json
+import os
+
 import psycopg2
 
 from config import DB_DSN, EMBED_DIM
-from embed_model import TfidfSvdEmbedder
+from embed_model import load_embedder
+from search import exact_top_ids
 from load_data import vec_to_pg
 
 TOP_K = 10
@@ -37,28 +41,29 @@ PROBES = [
 ]
 
 
+def load_probes():
+    path = os.environ.get("SELFHEAL_PROBES")
+    return [tuple(p) for p in json.load(open(path))] if path else PROBES
+
+
 def main():
-    model = TfidfSvdEmbedder.load()
+    model = load_embedder()
     conn = psycopg2.connect(DB_DSN)
     cur = conn.cursor()
     cur.execute("TRUNCATE canary_set RESTART IDENTITY;")
+    cur.execute("SELECT max(id) FROM documents")
+    corpus_max_id = cur.fetchone()[0]
 
-    for category, query_text in PROBES:
+    for category, query_text in load_probes():
         vec = model.embed([query_text])[0]
         pgvec = vec_to_pg(vec)
+        # Exact (brute-force) ground truth: an approximate index must never
+        # define "correct", or a later index rebuild would look like drift.
+        top_ids = exact_top_ids(cur, pgvec, TOP_K)
         cur.execute(
-            """
-            SELECT id FROM documents
-            ORDER BY embedding <=> %s::vector
-            LIMIT %s
-            """,
-            (pgvec, TOP_K),
-        )
-        top_ids = [r[0] for r in cur.fetchall()]
-        cur.execute(
-            """INSERT INTO canary_set (query_text, expected_doc_ids, category)
-               VALUES (%s, %s, %s)""",
-            (query_text, top_ids, category),
+            """INSERT INTO canary_set (query_text, expected_doc_ids, category, corpus_max_id)
+               VALUES (%s, %s, %s, %s)""",
+            (query_text, top_ids, category, corpus_max_id),
         )
         print(f"[{category:10s}] {query_text!r} -> top-{TOP_K} ids {top_ids}")
 

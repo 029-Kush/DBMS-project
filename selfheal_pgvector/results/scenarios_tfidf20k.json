@@ -1,0 +1,330 @@
+[
+  {
+    "scenario": "healthy (control)",
+    "issues_seen": [],
+    "status_before": "HEALTHY",
+    "recall_before": 1.0,
+    "ann_before": 0.9961538461538461,
+    "outcomes": [
+      "NO_ACTION"
+    ],
+    "actions": [
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 0.9980769230769231,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 0.45
+  },
+  {
+    "scenario": "model drift 25% (labelled)",
+    "issues_seen": [
+      "LOW_RECALL",
+      "VERSION_SKEW"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 0.7416666666666667,
+    "ann_before": 1.0,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REEMBED_STALE",
+        "VACUUM"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 0.9980769230769231,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 3.29
+  },
+  {
+    "scenario": "stale labels (id%3)",
+    "issues_seen": [
+      "VERSION_SKEW",
+      "TABLE_BLOAT"
+    ],
+    "status_before": "DEGRADED",
+    "recall_before": 1.0,
+    "ann_before": 0.9942307692307693,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REEMBED_STALE",
+        "VACUUM"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 1.0,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 2.49
+  },
+  {
+    "scenario": "silent permutation 25%",
+    "issues_seen": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 0.7416666666666667,
+    "ann_before": 0.9923076923076923,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REPAIR_VECTORS",
+        "VACUUM"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 1.0,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 3.89
+  },
+  {
+    "scenario": "silent noise 25% (sigma .15)",
+    "issues_seen": [
+      "LOW_RECALL",
+      "VECTOR_MISMATCH"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 0.7416666666666667,
+    "ann_before": 0.9942307692307693,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REPAIR_VECTORS",
+        "VACUUM"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 1.0,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 6.0
+  },
+  {
+    "scenario": "content updated, embedding stale",
+    "issues_seen": [
+      "VECTOR_MISMATCH"
+    ],
+    "status_before": "DEGRADED",
+    "recall_before": 1.0,
+    "ann_before": 1.0,
+    "outcomes": [
+      "SUCCEEDED",
+      "ESCALATED"
+    ],
+    "actions": [
+      [
+        "REPAIR_VECTORS",
+        "VACUUM"
+      ],
+      [
+        "SCAN_VECTORS",
+        "VACUUM"
+      ]
+    ],
+    "status_after": "CRITICAL",
+    "issues_after": [
+      "LOW_RECALL"
+    ],
+    "recall_after": 0.9,
+    "ann_after": 0.9942307692307693,
+    "rows_not_matching_pre_fault": 2856,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 8.22
+  },
+  {
+    "scenario": "HNSW index dropped",
+    "issues_seen": [
+      "INDEX_MISSING"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 1.0,
+    "ann_before": 1.0,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REBUILD_INDEX"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 1.0,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 2.77
+  },
+  {
+    "scenario": "HNSW index INVALID",
+    "issues_seen": [
+      "INDEX_MISSING"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 1.0,
+    "ann_before": 1.0,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REBUILD_INDEX"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 0.9961538461538461,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 2.69
+  },
+  {
+    "scenario": "HNSW index degraded (m=4)",
+    "issues_seen": [
+      "LOW_RECALL",
+      "DISTANCE_DRIFT",
+      "INDEX_DEGRADED"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 0.5333333333333333,
+    "ann_before": 0.5423076923076923,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REBUILD_INDEX"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 0.9961538461538461,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 1.79
+  },
+  {
+    "scenario": "table bloat",
+    "issues_seen": [
+      "TABLE_BLOAT"
+    ],
+    "status_before": "DEGRADED",
+    "recall_before": 1.0,
+    "ann_before": 1.0,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "VACUUM"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 0.9980769230769231,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 1.16
+  },
+  {
+    "scenario": "drift + dropped index + bloat",
+    "issues_seen": [
+      "LOW_RECALL",
+      "VERSION_SKEW",
+      "TABLE_BLOAT",
+      "INDEX_MISSING"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 0.7416666666666667,
+    "ann_before": 1.0,
+    "outcomes": [
+      "SUCCEEDED",
+      "NO_ACTION"
+    ],
+    "actions": [
+      [
+        "REEMBED_STALE",
+        "REBUILD_INDEX",
+        "VACUUM"
+      ],
+      []
+    ],
+    "status_after": "HEALTHY",
+    "issues_after": [],
+    "recall_after": 1.0,
+    "ann_after": 1.0,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 5.69
+  },
+  {
+    "scenario": "unexplained recall loss (canary rot)",
+    "issues_seen": [
+      "LOW_RECALL"
+    ],
+    "status_before": "CRITICAL",
+    "recall_before": 0.5,
+    "ann_before": 1.0,
+    "outcomes": [
+      "ESCALATED"
+    ],
+    "actions": [
+      [
+        "SCAN_VECTORS",
+        "VACUUM"
+      ]
+    ],
+    "status_after": "CRITICAL",
+    "issues_after": [
+      "LOW_RECALL"
+    ],
+    "recall_after": 0.5,
+    "ann_after": 1.0,
+    "rows_not_matching_pre_fault": 0,
+    "rows_inconsistent_with_text": 0,
+    "heal_seconds": 1.28
+  }
+]

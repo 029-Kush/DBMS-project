@@ -57,6 +57,11 @@ python3 eval_recall.py baseline
 | `sql/phase2_migration.sql` | Idempotent, additive Phase 2 migration that preserves Phase 1 data |
 | `sql/phase3_migration.sql` | Fault-run audit trail and per-document embedding backups |
 | `PHASE2.md` | Phase 2 design, thresholds, operation, and definition of done |
+| `scripts/diagnose.py`, `repair.py`, `heal.py` | Phase 4 self-healing: diagnose issue codes, apply targeted repair, verify or roll back (`monitor.py --heal`) |
+| `sql/phase4_migration.sql` | Maintenance-event audit trail and healer rollback backups |
+| `scripts/fault_lab.py`, `benchmark.py`, `analyze_matrix.py`, `run_fault_tolerance.py`, `db_setup.py` | Phase 5: extra reversible faults, benchmarks, crash/concurrency test matrix, dimension-aware schema setup |
+| `PHASE5.md`, `results/` | Phase 5 hardening, real-embedder/scale results, raw measurements |
+| `PHASE4.md` | Phase 4 design, safety model, measured results |
 | `PHASE3.md` | Fault design, safety model, measured results, and remaining experiments |
 
 ## A note on the embedding model
