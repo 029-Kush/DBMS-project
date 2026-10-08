@@ -19,6 +19,7 @@ secrets/
 # frontend/backend generated files
 node_modules/
 dist/
+*.tsbuildinfo
 build/
 staticfiles/
 media/

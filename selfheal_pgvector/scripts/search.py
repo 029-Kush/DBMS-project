@@ -9,7 +9,7 @@ import time
 from load_data import vec_to_pg
 
 
-def search_documents(cur, model, query_text, top_k=10, source="user", log_query=True, max_id=None):
+def search_documents(cur, model, query_text, top_k=10, source="user", log_query=True, max_id=None, category=None):
     """Embed a query, run cosine search, optionally log it, and return metrics."""
     vector = model.embed([query_text])[0]
     if not any(abs(value) > 1e-12 for value in vector):
@@ -22,8 +22,16 @@ def search_documents(cur, model, query_text, top_k=10, source="user", log_query=
 
     # max_id restricts to documents that existed when the canaries were frozen,
     # so legitimate later inserts cannot masquerade as drift.
-    where = "WHERE id <= %s" if max_id is not None else ""
-    params = (pgvector,) + ((max_id,) if max_id is not None else ()) + (pgvector, top_k)
+    clauses = []
+    filters = []
+    if max_id is not None:
+        clauses.append("id <= %s")
+        filters.append(max_id)
+    if category is not None:
+        clauses.append("category = %s")
+        filters.append(category)
+    where = "WHERE " + " AND ".join(clauses) if clauses else ""
+    params = (pgvector, *filters, pgvector, top_k)
     started = time.perf_counter()
     cur.execute(
         f"""SELECT id, embedding <=> %s::vector AS distance

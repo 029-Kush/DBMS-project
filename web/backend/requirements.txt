@@ -1,0 +1,6 @@
+Django>=6.1,<7
+djangorestframework>=3.16,<4
+psycopg2-binary>=2.9,<3
+numpy>=1.26
+scikit-learn>=1.4
+python-dotenv>=1.0,<2
