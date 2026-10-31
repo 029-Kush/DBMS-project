@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}{% endblock %} · DocSearch</title>
+<title>{% block title %}{% endblock %} · VectorIT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -39,7 +39,7 @@
 <body>
 <canvas id="cv" aria-hidden="true"></canvas>
 <div class="wrap"><div class="card">
-  <div class="brand"><i></i><div><b>DocSearch</b><span>Hybrid search over technical documentation</span></div></div>
+  <div class="brand"><i></i><div><b>VectorIT</b><span>Hybrid search over technical documentation</span></div></div>
   {% for cat, msg in get_flashed_messages(with_categories=true) %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
   {% block content %}{% endblock %}
 </div></div>

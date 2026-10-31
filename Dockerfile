@@ -1,4 +1,4 @@
-# DocSearch web app (kb_web) + the hybrid search engine it calls (knowledge_base/scripts).
+# VectorIT web app (kb_web) + the hybrid search engine it calls (knowledge_base/scripts).
 # The database is external (DATABASE_URL); the image holds only code and the query embedding model.
 FROM python:3.11-slim
 
