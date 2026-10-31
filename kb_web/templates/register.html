@@ -1,13 +1,15 @@
-{% extends "base.html" %}{% from "_macros.html" import field %}
+{% extends "auth_base.html" %}{% from "_auth_field.html" import field %}
 {% block title %}Register{% endblock %}
 {% block content %}
 <h1>Create an account</h1>
-<form method="post" class="panel form" novalidate>
+<p class="sub">New accounts can search, explore and keep bookmarks. An admin can grant editing rights.</p>
+<form method="post" novalidate>
   {{ form.hidden_tag() }}
-  {{ field(form.username, autocomplete="username", autofocus=true) }}
-  {{ field(form.email, autocomplete="email") }}
-  {{ field(form.password, autocomplete="new-password") }}
+  {{ field(form.username, autocomplete="username", autofocus=true, placeholder="lowercase, 3–32 characters") }}
+  {{ field(form.email, autocomplete="email", placeholder="you@example.com") }}
+  {{ field(form.password, autocomplete="new-password", placeholder="at least 10 characters") }}
   {{ field(form.confirm, autocomplete="new-password") }}
-  <p><button>Register</button></p>
+  <button>Create account</button>
 </form>
+<p class="alt">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
 {% endblock %}
