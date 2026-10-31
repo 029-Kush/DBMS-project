@@ -1,4 +1,4 @@
-"""DocSearch web app: Flask + SQLAlchemy front end for the PostgreSQL hybrid-search knowledge base."""
+"""VectorIT web app: Flask + SQLAlchemy front end for the PostgreSQL hybrid-search knowledge base."""
 import gzip
 import logging
 import os
