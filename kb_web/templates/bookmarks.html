@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% from "_macros.html" import pager, csrf %}
+{% block title %}Bookmarks{% endblock %}
+{% block content %}
+<h1>Your bookmarks</h1>
+{% for b in pg.items %}
+<div class="hit">
+  <h3><a href="{{ url_for('main.entity', entity_id=b.chunk.entity_id) }}">{{ b.chunk.entity.name }}</a> · {{ b.chunk.section }}</h3>
+  <div class="meta"><span class="tag">{{ b.chunk.source }}</span> saved {{ b.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  <pre>{{ b.chunk.body.body[:1200] }}{% if b.chunk.body.body|length > 1200 %}…{% endif %}</pre>
+  <div class="row">
+    <form method="post" action="{{ url_for('main.bookmark_edit', bookmark_id=b.id) }}" class="row" style="flex:1 1 300px">{{ csrf() }}
+      <input type="text" name="note" value="{{ b.note or '' }}" maxlength="500" placeholder="Note" style="flex:1;width:auto" aria-label="Note">
+      <button class="link">Save note</button></form>
+    <form method="post" action="{{ url_for('main.bookmark_delete', bookmark_id=b.id) }}">{{ csrf() }}<button class="danger">Remove</button></form>
+  </div>
+</div>
+{% else %}<p class="muted">Nothing saved yet. Use “Bookmark” on a search result.</p>{% endfor %}
+{{ pager(pg, 'main.bookmarks') }}
+{% endblock %}

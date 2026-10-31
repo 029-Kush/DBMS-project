@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% from "_macros.html" import pager %}
+{% block title %}Entities{% endblock %}
+{% block content %}
+<div class="row" style="justify-content:space-between"><h1>Entities</h1>
+  {% if current_user.can('editor') %}<div class="row"><a class="btn" href="{{ url_for('main.entity_new') }}">New entity</a>
+  {% if current_user.can('admin') %}<a class="btn ghost" href="{{ url_for('admin.merge') }}">Merge</a>{% endif %}</div>{% endif %}</div>
+<form class="panel row" method="get">
+  <input type="search" name="q" value="{{ q }}" maxlength="100" placeholder="Filter by name" aria-label="Name filter">
+  <select name="type" aria-label="Type"><option value="">All types</option>
+    {% for t in types %}<option {{ 'selected' if t == etype }}>{{ t }}</option>{% endfor %}</select>
+  <button>Filter</button>
+</form>
+<div class="panel scroll"><table>
+  <tr><th>Name</th><th>Type</th><th class="num">Passages</th><th class="hide-sm">Version</th></tr>
+  {% for e in pg.items %}
+  <tr><td><a href="{{ url_for('main.entity', entity_id=e.id) }}">{{ e.name }}</a></td><td>{{ e.type }}</td>
+      <td class="num">{{ counts.get(e.id, 0) }}</td><td class="hide-sm muted">{{ e.version or '' }}</td></tr>
+  {% else %}<tr><td colspan="4">No entities match.</td></tr>{% endfor %}
+</table></div>
+{{ pager(pg, 'main.entities', q=q, type=etype) }}
+{% endblock %}

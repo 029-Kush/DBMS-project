@@ -1,0 +1,31 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: security-kb
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:${KB_PORT}:5432"
+    shm_size: 1g
+    volumes:
+      # Data lives in a btrfs image (zstd compress-force) on the external drive (the SSD is nearly full; Postgres cannot run on NTFS).
+      # create_host_path: false -> if the image is not mounted, the container fails instead of silently
+      # initialising an empty database somewhere else. Mount it first with scripts/kb_mount.sh.
+      - type: bind
+        source: /run/media/meh/kbdata/pgdata
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: false
+          selinux: z
+    command:
+      - postgres
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - maintenance_work_mem=512MB
+      - -c
+      - work_mem=32MB
+      - -c
+      - max_parallel_maintenance_workers=2
+      - -c
+      - default_toast_compression=lz4

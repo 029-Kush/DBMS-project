@@ -1,0 +1,16 @@
+{% macro field(f) %}
+  <label for="{{ f.id }}">{{ f.label.text }}</label>
+  {{ f(**kwargs) }}
+  {% if f.errors %}<ul class="errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+{% endmacro %}
+{% macro pager(pg, endpoint) %}
+  {% if pg.pages > 1 %}<div class="pager">
+    {% if pg.has_prev %}<a class="btn ghost" href="{{ url_for(endpoint, page=pg.prev_num, **kwargs) }}">&larr; Prev</a>{% endif %}
+    {% for p in pg.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}{% if p == pg.page %}<span class="cur">{{ p }}</span>{% else %}<a href="{{ url_for(endpoint, page=p, **kwargs) }}">{{ p }}</a>{% endif %}{% else %}<span class="muted">…</span>{% endif %}
+    {% endfor %}
+    {% if pg.has_next %}<a class="btn ghost" href="{{ url_for(endpoint, page=pg.next_num, **kwargs) }}">Next &rarr;</a>{% endif %}
+    <span class="muted">{{ pg.total }} total</span>
+  </div>{% endif %}
+{% endmacro %}
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}

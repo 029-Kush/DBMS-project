@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}Merge entities{% endblock %}
+{% block content %}
+<h1>Merge duplicate entities</h1>
+<form method="post" class="panel form" novalidate>
+  {{ form.hidden_tag() }}
+  {{ field(form.src) }}{{ field(form.dst) }}
+  <p class="muted">Runs the stored procedure <code>merge_entities</code> in one transaction: passages and links move to the
+     second entity, the first one's name becomes an alias, and the first entity is deleted. If any step fails nothing changes.</p>
+  <p><button>Merge</button></p>
+</form>
+{% endblock %}

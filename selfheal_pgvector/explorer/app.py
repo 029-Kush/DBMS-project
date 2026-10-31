@@ -28,11 +28,25 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "scripts"))
 
 import embed_model  # noqa: E402
+import readable  # noqa: E402
 from config import CURRENT_MODEL_VERSION, DB_DSN, EMBED_DIM, EMBEDDER  # noqa: E402
 import heal  # noqa: E402
 from eval_recall import main as run_health_check  # noqa: E402
 from hnsw_trace import TraceHNSW  # noqa: E402
 from load_data import vec_to_pg  # noqa: E402
+
+# Hybrid ranking (keyword + trigram + exact flag/ID + vector, fused with RRF) lives in the security-kb project.
+# Loaded under its own module name: this folder's scripts/ also has a search.py that heal.py imports.
+KB_SCRIPTS = Path(os.environ.get("KB_SCRIPTS", Path.home() / "security-kb" / "scripts"))
+KB_SEARCH = None
+try:
+    import importlib.util
+    sys.path.append(str(KB_SCRIPTS))   # appended, so this project's own modules win any name clash
+    _spec = importlib.util.spec_from_file_location("kb_search", KB_SCRIPTS / "search.py")
+    KB_SEARCH = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(KB_SEARCH)
+    KB_SEARCH.embed(["warm up"])   # load the KB's embedding model now, not during the first user search (~10 s)
+except Exception as exc:  # hub still works as plain vector search
+    print("hybrid search unavailable:", exc, file=sys.stderr)
 
 M, EF_CONSTRUCTION, EF_SEARCH = 16, 64, 40
 SUGGESTIONS = [
@@ -58,9 +72,10 @@ def db():
 
 
 def fingerprint(cur):
-    cur.execute("SELECT count(*), md5(string_agg(md5(embedding::text), '' ORDER BY id)) FROM documents")
-    n, h = cur.fetchone()
-    return f"{n}:{h}"
+    # O(1): the table's own write counters (inserts/updates/deletes) change whenever rows or embeddings do.
+    # Hashing every embedding here cost ~0.33 s per check at 20k rows and grows linearly with the table.
+    cur.execute("SELECT n_tup_ins, n_tup_upd, n_tup_del FROM pg_stat_user_tables WHERE relname = 'documents'")
+    return ":".join(str(x) for x in (cur.fetchone() or (0, 0, 0)))
 
 
 def neighbour_preservation(vectors, coords, k=10):
@@ -70,8 +85,26 @@ def neighbour_preservation(vectors, coords, k=10):
 
 
 def short_title(body, words=8):
+    first = body.split("\n", 1)[0].strip()   # KB docs start with "<entity> · <section>"
+    if first and " · " in first:
+        return first[:90]
     parts = body.split()
     return " ".join(parts[:words]) + ("…" if len(parts) > words else "")
+
+
+MAX_POINTS = int(os.environ.get("EXPLORER_MAX_POINTS", "30000"))
+BULK_CATS = ("man", "kernel-doc")      # the huge sources; thinned to a deterministic sample so the in-process graph and 3-D map stay bounded
+SAMPLE = {"where": "TRUE", "stride": 1}   # SQL predicate selecting the mapped documents; set by build()
+
+
+def sample_plan(cur):
+    """Keep every document outside BULK_CATS and every stride-th bulk one, so the map holds about MAX_POINTS."""
+    cur.execute("SELECT count(*) FILTER (WHERE category = ANY(%s)), count(*) FROM documents", (list(BULK_CATS),))
+    bulk, total = cur.fetchone()
+    room = max(MAX_POINTS - (total - bulk), 1000)
+    stride = max(1, -(-bulk // room))
+    where = "TRUE" if stride == 1 else f"(NOT category = ANY(ARRAY{list(BULK_CATS)!r}) OR mod(id, {stride}) = 0)"   # mod(), not %, so the predicate is safe inside parameterised queries
+    return {"where": where, "stride": stride, "bulk": bulk, "total": total}
 
 
 def build():
@@ -79,13 +112,16 @@ def build():
     t0 = time.time()
     with db() as cur:
         fp = fingerprint(cur)
-        cur.execute("SELECT id, category, body, embedding::text FROM documents ORDER BY id")
+        plan = sample_plan(cur)
+        SAMPLE.update(plan)
+        cur.execute(f"SELECT id, category, body, embedding::text FROM documents WHERE {plan['where']} ORDER BY id")
         rows = cur.fetchall()
     ids = [r[0] for r in rows]
     vectors = np.array([[float(x) for x in r[3].strip("[]").split(",")] for r in rows], dtype=np.float32)
     index = TraceHNSW(vectors, m=M, ef_construction=EF_CONSTRUCTION)
     reducer = umap.UMAP(n_components=3, n_neighbors=15, min_dist=0.1, metric="cosine", random_state=7)
     raw = reducer.fit_transform(index.v)
+    reducer.transform(index.v[:2])   # triggers UMAP's one-time JIT compile here, not on the first user search (~10 s)
     center = raw.mean(0)
     scale = 320.0 / np.abs(raw - center).max()  # fit the cloud into roughly +-320 scene units
     coords = (raw - center) * scale
@@ -166,6 +202,33 @@ def points():
             "category": STATE["category"], "title": STATE["title"]}
 
 
+def build_topic(q, hits):
+    """One reference page for the entity the query is about: the entity the whole query names, else the entity
+    most of the top hits belong to. Chunks are the stored text, grouped by section."""
+    if KB_SEARCH is None: return None
+    try:
+        with KB_SEARCH.connect() as conn:   # closes (and ends the transaction): an open one blocked KB schema changes
+            cur = conn.cursor()
+            eids = KB_SEARCH.entity_ids(cur, q)
+            ql = q.strip().lower()
+            cur.execute("SELECT id FROM entities WHERE id = ANY(%s) AND (lower(name) = %s OR %s = ANY(SELECT lower(a) FROM unnest(aliases) a) OR lower(ext_id) = %s)",
+                        (eids or [0], ql, ql, ql))
+            named = [r[0] for r in cur.fetchall()]
+            eid = named[0] if named else None
+            if eid is None and hits:
+                cur.execute("SELECT entity_id FROM chunks WHERE id = ANY(%s)", ([h[0][0] for h in hits[:8]],))
+                ents = [r[0] for r in cur.fetchall()]
+                top = max(set(ents), key=ents.count)
+                if ents.count(top) >= max(3, len(ents) // 2 + 1): eid = top
+            if eid is None: return None
+            cur.execute("SELECT name, type, aliases FROM entities WHERE id=%s", (eid,))
+            name, typ, aliases = cur.fetchone()
+            cur.execute("SELECT id, section, source, source_version, body FROM chunks WHERE entity_id=%s ORDER BY id LIMIT 600", (eid,))
+            return readable.topic({"name": name, "type": typ, "aliases": aliases}, cur.fetchall())
+    except Exception as exc:
+        print("topic failed:", exc, file=sys.stderr); return None
+
+
 @app.get("/api/search")
 def search(q: str = Query(..., min_length=1, max_length=500), k: int = Query(10, ge=1, le=20)):
     if not q.strip():
@@ -182,13 +245,16 @@ def search(q: str = Query(..., min_length=1, max_length=500), k: int = Query(10,
         top, trace = index.search(vec, k=k, ef=EF_SEARCH)
     search_ms = (time.perf_counter() - t0) * 1e3
     qn = vec / max(float(np.linalg.norm(vec)), 1e-12)
-    exact = [int(i) for i in np.argsort(-(index.v @ qn))[:k]]
+    sims = index.v @ qn
+    part = np.argpartition(-sims, min(k, len(sims) - 1))[:k]          # top-k without sorting all N
+    exact = [int(i) for i in part[np.argsort(-sims[part])]]
     pg_ids, pg_ms = [], None
     try:
         with db() as cur:
             cur.execute("SET LOCAL enable_seqscan = off")
+            cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")   # the sample filter is applied after the index scan; keep scanning until k rows pass
             t1 = time.perf_counter()
-            cur.execute("SELECT id FROM documents ORDER BY embedding <=> %s::vector LIMIT %s", (vec_to_pg(vec.tolist()), k))
+            cur.execute(f"SELECT id FROM documents WHERE {SAMPLE['where']} ORDER BY embedding <=> %s::vector LIMIT %s", (vec_to_pg(vec.tolist()), k))
             pg_ids = [r[0] for r in cur.fetchall()]
             pg_ms = (time.perf_counter() - t1) * 1e3
     except Exception as exc:  # database down: still show our own result, flag the check as unavailable
@@ -199,10 +265,56 @@ def search(q: str = Query(..., min_length=1, max_length=500), k: int = Query(10,
     qpos = [round(float(x), 2) for x in (reducer.transform(qn.reshape(1, -1))[0] - STATE["center"]) * STATE["scale"]]
     def nodes(lst):
         return [{"n": int(n), "id": ids[n], "dist": round(d, 4), "score": round(1 - d, 4), "title": title[n],
-                 "category": category[n], "text": body[n][:400]} for n, d in lst]
+                 "category": category[n], "text": body[n][:4000]} for n, d in lst]
+    results, hybrid, raw_hits = nodes(top), False, []
+    if KB_SEARCH is not None:
+        try:
+            if STATE.get("where_for") is not ids:                         # id -> position map, rebuilt only when the index is
+                STATE["where"], STATE["where_for"] = {i: n for n, i in enumerate(ids)}, ids
+            where = STATE["where"]
+            hits = KB_SEARCH.search(q, limit=k)
+            raw_hits = hits
+            if hits:
+                top_rrf = hits[0][1]
+                # the map is keyed by text (bodies.id); a hit is a chunk, so map chunk -> text first
+                with KB_SEARCH.connect() as kconn:
+                    kcur = kconn.cursor()
+                    kcur.execute("SELECT id, body_id FROM chunk_refs WHERE id = ANY(%s)", ([r[0] for r, _, _ in hits],))
+                    bid = dict(kcur.fetchall())
+                    off = [bid[r[0]] for r, _, _ in hits if r[0] in bid and bid[r[0]] not in where]   # outside the mapped sample
+                    extra = {}
+                    if off:   # kbview holds only the map sample; the rest lives in the KB as 4-bit codes
+                        _, map_version, map_table = KB_SEARCH.EMBEDDERS["minilm"]   # the map is MiniLM space, whatever the KB ranks with
+                        kcur.execute(f"""SELECT v.id, (SELECT source FROM chunk_refs WHERE body_id = v.id ORDER BY id LIMIT 1), v.q
+                                         FROM {map_table} v WHERE v.id = ANY(%s)""", (off,))
+                        got = kcur.fetchall()
+                        for (i, c, _), v in zip(got, KB_SEARCH.decode(kcur, [g[2] for g in got], map_version)):
+                            extra[i] = (c, v.astype(np.float32))
+                results, placed = [], None
+                for r, sc, via in hits:
+                    text = f"{r[1]} · {r[2]}\n{r[5]}"
+                    b = bid.get(r[0])
+                    if b in where:
+                        n = where[b]; d = float(1 - index.v[n] @ qn); cat, ttl = category[n], title[n]
+                    elif b in extra:
+                        n = -1; cat, v = extra[b]; d = float(1 - (v / max(float(np.linalg.norm(v)), 1e-12)) @ qn); ttl = short_title(text)
+                        placed = placed if placed is not None else dict(zip(extra, _place(np.stack([e[1] for e in extra.values()])).tolist()))
+                    else:
+                        continue   # no embedding yet
+                    results.append({"n": n, "id": r[0], "dist": round(d, 4), "score": round(sc / top_rrf, 4), "title": ttl,
+                                    "category": cat, "text": text, "via": via})
+                    if n == -1: results[-1]["xyz"] = [round(float(x), 2) for x in placed[b]]   # projected now; not in the graph
+                hybrid = bool(results)
+        except Exception as exc:
+            print("hybrid search failed:", exc, file=sys.stderr)
+    near = nodes(trace["near_miss"])
+    for r in results + near:
+        bs = readable.blocks(r["text"].split("\n", 1)[1] if "\n" in r["text"] else r["text"], r["category"])
+        r["blocks"], r["snippet"] = bs, readable.snippet(bs)
+    results = [r for r in results if r["blocks"]] or results   # drop chunks that are only man-page header noise
     out = {
         "query": q, "k": k, "search_ms": round(search_ms, 2), "pgvector_ms": None if pg_ms is None else round(pg_ms, 2),
-        "results": nodes(top), "near_miss": nodes(trace["near_miss"]),
+        "hybrid": hybrid, "topic": build_topic(q, raw_hits), "results": results, "near_miss": near,
         "paths": {str(n): p for n, p in trace["paths"].items()},
         "steps": trace["steps"], "visited_layer0": trace["visited_layer0"], "documents": len(ids),
         "query_xyz": qpos,
@@ -269,13 +381,13 @@ def _sync_fingerprint():
 
 def _fingerprints():
     with db() as cur:
-        cur.execute("SELECT id, md5(embedding::text) FROM documents")
+        cur.execute(f"SELECT id, md5(embedding::text) FROM documents WHERE {SAMPLE['where']}")
         return dict(cur.fetchall())
 
 
 def _vectors_from_db():
     with db() as cur:
-        cur.execute("SELECT embedding::text FROM documents ORDER BY id")
+        cur.execute(f"SELECT embedding::text FROM documents WHERE {SAMPLE['where']} ORDER BY id")
         return np.array([[float(x) for x in r[0].strip("[]").split(",")] for r in cur.fetchall()], dtype=np.float32)
 
 

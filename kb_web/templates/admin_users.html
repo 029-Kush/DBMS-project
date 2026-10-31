@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<h1>Users</h1>
+<div class="panel scroll"><table>
+  <tr><th>User</th><th>Role</th><th class="num">Searches</th><th class="num">Bookmarks</th><th class="hide-sm">Last login</th><th>Status</th></tr>
+  {% for u in rows %}
+  <tr><td>{{ u.username }}</td>
+    <td>{% if u.id == current_user.id %}{{ u.role }} (you){% else %}
+      <form method="post" action="{{ url_for('admin.set_role', user_id=u.id) }}" class="row">{{ csrf() }}
+        <select name="role" aria-label="Role for {{ u.username }}">{% for r in ['viewer','editor','admin'] %}<option {{ 'selected' if r == u.role }}>{{ r }}</option>{% endfor %}</select>
+        <button class="link">Set</button></form>{% endif %}</td>
+    <td class="num">{{ u.searches }}</td><td class="num">{{ u.bookmarks }}</td>
+    <td class="hide-sm muted">{{ u.last_login.strftime('%Y-%m-%d %H:%M') if u.last_login else 'never' }}</td>
+    <td>{% if u.id == current_user.id %}active{% else %}
+      <form method="post" action="{{ url_for('admin.toggle_active', user_id=u.id) }}">{{ csrf() }}
+        <button class="{{ 'danger' if u.is_active else 'link' }}">{{ 'Disable' if u.is_active else 'Enable' }}</button></form>{% endif %}</td></tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

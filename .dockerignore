@@ -1,0 +1,16 @@
+**/__pycache__
+**/*.pyc
+.git
+.github
+.env
+.env.*
+**/.venv
+**/venv
+selfheal_pgvector
+demo
+*.pdf
+*.pptx
+*.docx
+*.zip
+kb_web/tests
+knowledge_base/docker-compose.yml

@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% from "_macros.html" import pager %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<p class="muted">Written by a database trigger on <code>entities</code> and <code>users</code>, so changes made outside the app are recorded too. Password hashes are never copied.</p>
+<p class="row"><a href="{{ url_for('admin.audit') }}">All</a> <a href="{{ url_for('admin.audit', table='entities') }}">entities</a> <a href="{{ url_for('admin.audit', table='users') }}">users</a></p>
+<div class="panel scroll"><table>
+  <tr><th>When</th><th>Who</th><th>Action</th><th>Row</th><th>Change</th></tr>
+  {% for a in pg.items %}
+  <tr><td class="muted">{{ a.changed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td><td>{{ a.actor }}</td><td>{{ a.action }}</td><td>{{ a.table_name }} #{{ a.row_id }}</td>
+    <td><small>{% if a.action == 'UPDATE' %}{% for k, v in a.new_row.items() if a.old_row.get(k) != v %}{{ k }}: {{ a.old_row.get(k) }} → {{ v }}<br>{% endfor %}
+      {% else %}{{ (a.new_row or a.old_row).get('name') or (a.new_row or a.old_row).get('username') }}{% endif %}</small></td></tr>
+  {% else %}<tr><td colspan="5">No changes recorded.</td></tr>{% endfor %}
+</table></div>
+{{ pager(pg, 'admin.audit', table=table) }}
+{% endblock %}

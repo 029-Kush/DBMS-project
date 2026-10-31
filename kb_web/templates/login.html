@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<h1>Log in</h1>
+<form method="post" class="panel form" novalidate>
+  {{ form.hidden_tag() }}
+  {{ field(form.username, autocomplete="username", autofocus=true) }}
+  {{ field(form.password, autocomplete="current-password") }}
+  <p><button>Log in</button></p>
+  <p class="muted">No account? <a href="{{ url_for('auth.register') }}">Register</a> (new accounts are viewers).</p>
+</form>
+{% endblock %}

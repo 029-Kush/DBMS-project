@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}Add passage{% endblock %}
+{% block content %}
+<h1>Add a passage to {{ e.name }}</h1>
+<form method="post" class="panel form" style="max-width:720px" novalidate>
+  {{ form.hidden_tag() }}
+  {{ field(form.section, placeholder="e.g. examples") }}{{ field(form.text) }}
+  <p class="muted">Saved in one transaction: the text (stored once even if it already exists), its vector codes and the passage row.
+     It is searchable immediately.</p>
+  <p class="row"><button>Add</button><a href="{{ url_for('main.entity', entity_id=e.id) }}">Cancel</a></p>
+</form>
+{% endblock %}
