@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} · DocSearch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* same tokens as the explorer (selfheal_pgvector/explorer/static/index.html) */
+  :root{ --line:#2A2A2E; --t1:#FAFAFA; --t2:#B4B4BC; --t3:#75757D; --accent:#5B8DEF; --accent-d:#4F7DD7;
+         --ok:#34D399; --bad:#FB7185; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:#000;color:var(--t1);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased}
+  canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+  .wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px}
+  .card{width:100%;max-width:380px;padding:30px 28px 24px;border-radius:24px;background:rgba(20,20,23,.82);
+        border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+        box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+  .brand i{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#8fb2ff,#5B8DEF 45%,#26304a 100%);
+           box-shadow:0 0 24px rgba(91,141,239,.45)}
+  .brand b{font-weight:600;font-size:15px;letter-spacing:.01em} .brand span{color:var(--t3);font-size:12px;display:block;font-weight:400}
+  h1{font-size:22px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--t2);margin:0 0 20px;font-size:13px;line-height:1.5}
+  label{display:block;font-size:12px;font-weight:500;color:var(--t2);margin:14px 0 6px}
+  input[type=text],input[type=password],input[type=email]{width:100%;height:42px;background:rgba(255,255,255,.05);border:1px solid var(--line);
+        border-radius:12px;color:var(--t1);font:14px var(--sans);padding:0 14px;outline:0;transition:border-color .2s,background .2s}
+  input:focus{border-color:rgba(91,141,239,.7);background:rgba(91,141,239,.06)}
+  .err{list-style:none;margin:6px 0 0;padding:0;color:var(--bad);font-size:12px}
+  button{width:100%;height:42px;margin-top:22px;border:0;border-radius:21px;background:var(--accent);color:#fff;font:500 14px var(--sans);
+         cursor:pointer;transition:background .2s} button:hover{background:var(--accent-d)}
+  .alt{margin:18px 0 0;text-align:center;color:var(--t3);font-size:13px} .alt a{color:var(--accent);text-decoration:none} .alt a:hover{text-decoration:underline}
+  .flash{padding:10px 12px;border-radius:12px;margin-bottom:14px;font-size:13px;border:1px solid var(--line);color:var(--t2)}
+  .flash.ok{border-color:rgba(52,211,153,.35);color:var(--ok)} .flash.error{border-color:rgba(251,113,133,.35);color:var(--bad)}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-hidden="true"></canvas>
+<div class="wrap"><div class="card">
+  <div class="brand"><i></i><div><b>DocSearch</b><span>Hybrid search over technical documentation</span></div></div>
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+  {% block content %}{% endblock %}
+</div></div>
+<script>
+// A slowly turning sample of the explorer's real 3-D map (positions and source only).
+(() => {
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d'), COL = ['#4FC3F7', '#26A69A', '#AED581'];
+  let W, H, pts = [], a = 0;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function resize(){ const d = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+  addEventListener('resize', resize); resize();
+  function frame(){
+    ctx.clearRect(0, 0, W, H);
+    const s = Math.max(W, H) / 640, c = Math.cos(a), n = Math.sin(a);
+    for (const [x, y, z, k] of pts){
+      const rx = x * c - z * n, rz = x * n + z * c, f = 900 / (900 + rz);
+      ctx.globalAlpha = Math.max(.18, Math.min(.85, .55 * f));
+      ctx.fillStyle = COL[k] || COL[0];
+      ctx.fillRect(W / 2 + rx * s * f, H / 2 + y * s * f, 1.6 * f, 1.6 * f);
+    }
+    if (!still){ a += .0012; requestAnimationFrame(frame); }
+  }
+  fetch('{{ url_for("static", filename="cloud.json") }}').then(r => r.json()).then(p => { pts = p; frame(); }).catch(() => {});
+})();
+</script>
+</body>
+</html>
