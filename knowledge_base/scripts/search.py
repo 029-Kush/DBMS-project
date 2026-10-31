@@ -170,7 +170,7 @@ def load_codes(cur):
         cur.execute(f"SELECT id, b::text, q FROM {VEC_TABLE} ORDER BY id"); rows = cur.fetchall()
         bits = np.frombuffer("".join(r[1] for r in rows).encode(), dtype=np.uint8).reshape(len(rows), 384) - 48
         _codes = (m, np.array([r[0] for r in rows], dtype=np.int64), np.packbits(bits, axis=1).view(np.uint64),
-                  np.frombuffer(b"".join(r[2] for r in rows), dtype=np.uint8).reshape(len(rows), -1))
+                  np.frombuffer(b"".join(r[2] for r in rows), dtype=np.uint8).reshape(len(rows), 384 // 2))   # explicit width: works with 0 rows
     return _codes
 
 def vector_ids(cur, qv, n, ef="", ep=()):
