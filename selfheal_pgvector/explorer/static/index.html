@@ -15,7 +15,7 @@
     --accent:#5B8DEF; --accent-d:#4F7DD7; --accent-bg:rgba(91,141,239,.14);
     --amber:#ffb960; --ok:#34D399; --other:#8DA2C8; --bad:#FB7185;
     --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
-    --panel:340px;
+    --panel:560px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000;color:var(--t1);font-family:var(--sans);font-size:14px;overflow:hidden;-webkit-font-smoothing:antialiased}
@@ -87,7 +87,21 @@
   .cm{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11px;color:var(--t3)}
   .bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden} .bar b{display:block;height:3px;background:var(--accent);border-radius:2px}
   .tag{padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.06)}
-  .ex{margin-top:9px;font-size:12px;line-height:1.55;color:var(--t2)}
+  .tt{font-size:20px;font-weight:700;letter-spacing:-.02em;margin:4px 2px 2px} .ts{font-size:12px;color:var(--t3);margin:0 2px 12px}
+  details.tg{margin-bottom:8px;border-radius:12px;background:rgba(255,255,255,.04)} details.tg>summary{cursor:pointer;padding:10px 14px;font-size:13.5px;font-weight:600;color:#fff;list-style:none}
+  details.tg>summary::before{content:'▸ ';color:var(--t3)} details.tg[open]>summary::before{content:'▾ '} details.tg>summary span{font-weight:400;color:var(--t3);font-size:11px;margin-left:6px}
+  .ex.tb{margin:0 8px 8px;max-height:none;background:transparent;padding:4px 6px} .tb .pg{font:500 11px var(--mono);color:var(--t3);margin:14px 0 6px;border-top:1px solid var(--line);padding-top:8px}
+  details.more>summary{cursor:pointer;color:#8cb4ff;font-size:12.5px;margin:8px 0}
+  .snip{font-size:12.5px;color:var(--t2);margin-top:3px;line-height:1.45}
+  .ex h4{margin:0 0 8px;font-size:12px;font-weight:500;color:var(--t3)}
+  .ex p{margin:0 0 .85em} .ex p.ind{margin-left:14px}
+  .ex .term{font-weight:600;color:#fff;margin:1.1em 0 .25em;font-family:var(--mono);font-size:13px}
+  .ex ul{margin:0 0 .85em;padding-left:20px} .ex li{margin:.3em 0}
+  .ex pre{margin:0 0 .9em;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.06);overflow-x:auto;white-space:pre;font:12.5px/1.5 var(--mono);color:#cfe3ff}
+  .ex code{font:12.5px var(--mono);padding:1px 5px;border-radius:5px;background:rgba(255,255,255,.09);color:#cfe3ff}
+  .ex .kv{margin:0 0 .5em} .ex .kv b{color:var(--t3);font-weight:500;margin-right:6px}
+  .ex a.idl{color:#8cb4ff;text-decoration:none;border-bottom:1px dotted #8cb4ff;cursor:pointer}
+  .ex{margin-top:10px;padding:12px 14px;max-height:55vh;overflow-y:auto;white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.65;color:#E4E4E7;background:rgba(0,0,0,.28);border-radius:10px;cursor:text}
   .sec{font-size:12px;font-weight:600;color:var(--t2);margin:18px 2px 8px;display:flex;justify-content:space-between;align-items:center}
   .sec:first-child{margin-top:4px} .sec span{font-weight:400;color:var(--t3)}
   .stp{position:relative;display:flex;gap:14px;padding:0 4px 18px 4px;cursor:pointer}
@@ -117,7 +131,7 @@
   #dock .g{display:flex;align-items:center;gap:2px;background:var(--card);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:4px}
   #dock button{background:transparent;border:0;color:var(--t3);font-size:12px;padding:6px 12px;border-radius:999px;cursor:pointer}
   #dock button:hover{color:var(--t1)} #dock button.on{background:rgba(255,255,255,.09);color:var(--t1)}
-  #legend{display:flex;gap:12px;font-size:11px;color:var(--t3)} #legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+  #legend{display:flex;flex-wrap:wrap;gap:4px 12px;max-width:min(560px,90vw);font-size:11px;color:var(--t3)} #legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
   @media (max-width:1000px){ #legend{display:none} }
 
   /* ---- Add information column (left) ---- */
@@ -205,7 +219,7 @@
 
 <aside id="panel">
   <div id="ph"><p id="pq"></p><div id="pverify"></div></div>
-  <div id="tabs"><button data-tab="results" class="on">Results</button><button data-tab="path">Path</button><button data-tab="checks">Checks</button></div>
+  <div id="tabs"><button data-tab="overview" class="on">Overview</button><button data-tab="results">Results</button><button data-tab="path">Path</button><button data-tab="checks">Checks</button></div>
   <div id="pb"></div>
 </aside>
 
@@ -220,7 +234,7 @@
   <div class="g">
     <button id="reset" title="Reset the view">Reset view</button>
     <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button>
-    <button id="topic" class="on" title="Tint points by news topic">Topics</button>
+    <button id="topic" class="on" title="Colour points by source group">Topics</button>
   </div>
   <div id="legend"></div>
 </div>
@@ -233,7 +247,7 @@ let W = 0, H = 0;
 function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
 addEventListener('resize', resize); resize();
 
-const TOPIC = { world:'#8DA2C8', sports:'#8BB59B', business:'#C9A56B', scitech:'#B592C9' };
+const TOPIC = { man:'#4FC3F7', help:'#26A69A', tldr:'#AED581', 'kernel-doc':'#B39DDB', attack:'#FF8A65', cwe:'#FFD54F', kev:'#F06292' };   // one colour per source group
 let META = null, P = null, R = null, A = null, sel = null;
 let hover = -1, mouse = {x:0,y:0};
 let speed = 1, playing = false, stepF = 0, finalT = 0, lastT = performance.now();
@@ -259,15 +273,17 @@ function proj(x,y,z){
   const d = z2 - cam.z; if (d <= 20) return null;
   const k = cam.fov/d; return { x:x1*k + cx, y:y2*k + H/2, s:k, d };
 }
-const pt = n => P.xyz[n];
-const pp = n => { const v = P.xyz[n]; return proj(v[0],v[1],v[2]); };
+// results outside the mapped sample come with their own projected xyz; they get ids from OFF up so they never collide with map points
+const OFF = 1e7, EXTRA = [];
+const pt = n => n >= OFF ? EXTRA[n-OFF]?.xyz : P.xyz[n];
+const pp = n => { const v = pt(n); return v ? proj(v[0],v[1],v[2]) : null; };
 
 /* ---------------- helpers ---------------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const ttl = n => P.title[n];
+const ttl = n => n >= OFF ? EXTRA[n-OFF]?.title : P.title[n];
 const sim = d => (1-d).toFixed(2);
 const fmt = n => n.toLocaleString('en-US');
-const topicOf = n => P.category[n];
+const topicOf = n => n >= OFF ? EXTRA[n-OFF]?.cat : P.category[n];
 
 function derive(r){
   const dmap = new Map(), layerAt = new Map();
@@ -313,7 +329,10 @@ async function runSearch(q){
     const res = await fetch('/api/search?k=10&q=' + encodeURIComponent(q));
     const j = await res.json();
     if (!res.ok){ bar.classList.remove('loading'); if (!R) bar.classList.remove('docked'); setStatus(j.error || j.detail || 'Search failed', true); return; }
-    R = j; A = derive(j); sel = j.results[0].n; tab = 'results'; panelDone = false;
+    EXTRA.length = 0;
+    j.results.forEach(x => { if (x.n === -1 && x.xyz){ x.n = OFF + EXTRA.length; EXTRA.push({xyz:x.xyz, title:x.title, cat:x.category}); } });
+    R = j; A = derive(j); sel = j.results[0].n; tab = j.topic ? 'overview' : 'results'; panelDone = false;
+    document.querySelector('#tabs [data-tab=overview]').style.display = j.topic ? '' : 'none';
     stepF = 0; finalT = 0; playing = true; lastT = performance.now(); lastIdx = -1; wasDone = false; pulses.length = 0;
     $('stale').style.display = j.stale ? 'block' : 'none';
     panelOn = true; $('panel').classList.add('show'); $('narr').style.display = 'block';
@@ -324,6 +343,7 @@ async function runSearch(q){
 
 /* ---------------- panel ---------------- */
 function verifyPill(c){
+  if (R.hybrid) return `<span class="pill ok">Keyword + meaning search</span>`;
   if (c.own_vs_pgvector === null) return `<span class="pill warn">Checked against a full scan only</span>`;
   const ok = c.own_vs_exact === c.k && c.own_vs_pgvector === c.k;
   return ok ? `<span class="pill ok">✓ Verified — matches an exact search</span>` : `<span class="pill warn">Differs from the exact answer — see Checks</span>`;
@@ -339,17 +359,58 @@ function renderPanel(){
   $('pverify').innerHTML = verifyPill(R.check);
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   const body = $('pb'), keep = body.scrollTop;
-  body.innerHTML = tab === 'results' ? tabResults() : tab === 'path' ? tabPath() : tabChecks();
+  body.innerHTML = tab === 'overview' ? tabOverview() : tab === 'results' ? tabResults() : tab === 'path' ? tabPath() : tabChecks();
   body.scrollTop = keep;
+}
+const SRC={attack:'MITRE ATT&CK',cwe:'CWE weakness',kev:'CISA KEV exploited vuln',man:'Tool man page',help:'Tool --help',tldr:'Tool examples','kernel-doc':'Kernel documentation'};
+
+const ID_RE = /\b(T\d{4}(?:\.\d{3})?|CVE-\d{4}-\d{4,}|CWE-\d+|CAPEC-\d+)\b/g;
+function inline(t){   // escape, then `code` spans and clickable ATT&CK/CVE/CWE ids
+  return esc(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(ID_RE, '<a class="idl" data-id="$1">$1</a>');
+}
+function renderBlocks(x){
+  const src = SRC[x.category] || x.category;
+  let h = `<h4>${esc(x.title)} · ${esc(src)}</h4>`, list = false;
+  for (const b of (x.blocks || [])){
+    if (b.t !== 'li' && list){ h += '</ul>'; list = false; }
+    if (b.t === 'li'){ if (!list){ h += '<ul>'; list = true; } h += `<li>${inline(b.s)}</li>`; }
+    else if (b.t === 'code') h += `<pre>${esc(b.s)}</pre>`;
+    else if (b.t === 'term') h += `<div class="term">${esc(b.s)}</div>`;
+    else if (b.t === 'kv') h += `<p class="kv"><b>${esc(b.k)}</b>${inline(b.s)}</p>`;
+    else h += `<p class="${b.ind ? 'ind' : ''}">${inline(b.s)}</p>`;
+  }
+  return h + (list ? '</ul>' : '');
+}
+
+function tabOverview(){
+  const T = R.topic; if (!T) return tabResults();
+  const item = it => `${it.page ? `<div class="pg">${esc(it.page)}</div>` : ''}${renderItem(it)}`;
+  const renderItem = it => { let h = '', list = false;
+    for (const b of it.blocks){
+      if (b.t !== 'li' && list){ h += '</ul>'; list = false; }
+      if (b.t === 'li'){ if (!list){ h += '<ul>'; list = true; } h += `<li>${inline(b.s)}</li>`; }
+      else if (b.t === 'code') h += `<pre>${esc(b.s)}</pre>`;
+      else if (b.t === 'term') h += `<div class="term">${esc(b.s)}</div>`;
+      else if (b.t === 'kv') h += `<p class="kv"><b>${esc(b.k)}</b>${inline(b.s)}</p>`;
+      else h += `<p class="${b.ind ? 'ind' : ''}">${inline(b.s)}</p>`;
+    } return h + (list ? '</ul>' : ''); };
+  const src = (T.groups[0] && T.groups[0].items[0]) ? T.groups[0].items[0] : null;
+  const groups = T.groups.map(g => {
+    const open = g.rank <= 3, first = g.items.slice(0, 3), more = g.items.slice(3);
+    return `<details class="tg" ${open ? 'open' : ''}><summary>${esc(g.label)} <span>${g.items.length}</span></summary>
+      <div class="ex tb">${first.map(item).join('')}${more.length ? `<details class="more"><summary>Show ${more.length} more</summary>${more.map(item).join('')}</details>` : ''}</div></details>`;
+  }).join('');
+  return `<div class="tt">${esc(T.name)}</div><div class="ts">${esc(T.type)}${T.aliases.length ? ' · also: ' + esc(T.aliases.slice(0,4).join(', ')) : ''}${src && src.version ? ' · ' + esc(src.source) + ' ' + esc(src.version) : ''}</div>${groups}`;
 }
 function tabResults(){
   const hi = R.results[0].score, lo = Math.min(...R.results.map(x => x.score));
   return R.results.map((x,i) => `
     <div class="card ${x.n===sel?'sel':''}" data-n="${x.n}">
       <div class="rank">${i+1}</div>
-      <div class="ct"><div class="ctt">${esc(x.title)}</div>
-        <div class="cm"><span class="tag">${esc(x.category)}</span><span class="bar"><b style="width:${Math.max(8,(x.score-lo*.9)/(hi-lo*.9)*100)}%"></b></span><span class="num">${x.score.toFixed(2)}</span></div>
-        ${x.n===sel ? `<div class="ex">${esc(x.text.slice(0,260))}${x.text.length>260?'…':''}</div>` : ''}
+      <div class="ct"><div class="ctt" style="font-size:14px;font-weight:600">${esc(x.title)}</div>
+        ${x.n===sel ? '' : `<div class="snip">${inline(x.snippet||'')}</div>`}
+        <div class="cm"><span class="tag">${esc(SRC[x.category]||x.category)}</span>${x.via?`<span style="color:var(--t3)">matched by ${x.via.map(v=>({fts:'keywords',trgm:'text',vec:'meaning',flag:'exact id'}[v]||v)).join(' + ')}</span>`:''}<span class="bar"><b style="width:${Math.max(8,(x.score-lo*.9)/(hi-lo*.9)*100)}%"></b></span><span class="num" title="relevance, best match = 1.00">${x.score.toFixed(2)}</span></div>
+        ${x.n===sel ? `<div class="ex">${renderBlocks(x)}</div>` : ''}
       </div></div>`).join('');
 }
 function tabPath(){
@@ -369,6 +430,7 @@ function tabPath(){
 function tabChecks(){
   const c = R.check, k = c.k, pct = META.projection.neighbour_preservation;
   return `<div class="sec">Is this the right answer?</div>
+    ${R.hybrid ? '<p class="note">Results are ranked by combining exact keyword and ID matches, fuzzy text matches and meaning (vector) matches. The two checks below cover only the meaning-based part, so they can differ from the list.</p>' : ''}
     <p class="note"><b>${c.own_vs_exact} of ${k}</b> results are the true closest documents, checked by comparing your query with all ${fmt(R.documents)} documents.</p>
     <p class="note">${c.own_vs_pgvector === null ? 'The database index was unavailable for a second check.' : `<b>${c.own_vs_pgvector} of ${k}</b> are the same as what the database's own index (pgvector) returns.`}</p>
     <div class="sec">How it searched</div>
@@ -385,7 +447,8 @@ function tabChecks(){
 }
 $('pb').addEventListener('click', e => {
   if (e.target.closest('#tog-alt')){ showAlt = !showAlt; renderPanel(); return; }
-  const el = e.target.closest('[data-n]'); if (!el) return;
+  const idl = e.target.closest('a.idl'); if (idl){ $('q').value = idl.dataset.id; submit(); return; }
+  if (e.target.closest('.ex')) return; const el = e.target.closest('[data-n]'); if (!el) return;
   sel = +el.dataset.n; renderPanel();
 });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.tab; renderPanel(); $('pb').scrollTop = 0; });
@@ -402,7 +465,7 @@ function polyline(path, t, style, w, dash, glow){
   ctx.lineCap = 'round';
   for (let i = 0; i < segs; i++){
     const f = Math.min(1, Math.max(0, upto - i)); if (f <= 0) break;
-    const a = pt(path[i]), b = pt(path[i+1]);
+    const a = pt(path[i]), b = pt(path[i+1]); if (!a || !b) continue;
     const p = proj(a[0],a[1],a[2]), q = proj(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f); if (!p || !q) continue;
     if (glow){ ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.strokeStyle = 'rgba(91,141,239,.2)'; ctx.lineWidth = w+6; ctx.stroke(); }
     ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.strokeStyle = style; ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
@@ -728,7 +791,7 @@ $('cb').onclick = e => {
     META = m; P = p; cx = W/2; P.flag = new Array(p.xyz.length).fill(0); P.born = new Array(p.xyz.length).fill(-1e9); renderCol();
     $('stale').style.display = m.stale ? 'block' : 'none';
     const sg = $('sugg'); m.suggestions.forEach(s => { const b = document.createElement('button'); b.textContent = s; b.onclick = () => { $('q').value = s; submit(); }; sg.appendChild(b); });
-    $('legend').innerHTML = Object.entries(TOPIC).map(([k,c]) => `<span><i style="background:${c}"></i>${k}</span>`).join('');
+    $('legend').innerHTML = Object.entries(TOPIC).map(([k,c]) => `<span><i style="background:${c}"></i>${esc(SRC[k]||k)}</span>`).join('');
     requestAnimationFrame(frame);
     // shareable links: ?q=text  [&step=N freezes mid-search]  [&final=1 jumps to the finished trace]  [&tab=path|checks]
     const u = new URLSearchParams(location.search);
