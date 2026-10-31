@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build a trimmed copy of the knowledge base for a free cloud Postgres, then back it up with pg_dump.
-#   KEEP="tldr help man" kb_web/scripts/export_cloud_subset.sh
+#   KEEP="tldr help man" kb_web/scripts/export_cloud_subset.sh      (or WHERE="<condition on chunk_refs>")
 # Runs inside the local container (docker exec): creates database kbcloud, copies only the passages from the sources in
 # KEEP (plus their entities, texts, MiniLM vector codes and links), adds the app tables, and writes
 # $KB_HDD/backups/kbcloud-<date>.dump (custom format). Restore it with kb_web/scripts/restore.sh.
@@ -22,7 +22,8 @@ copy() {   # copy("table [(columns)]", select) : stream rows between the two dat
     docker exec "$C" psql -v ON_ERROR_STOP=1 -q -U "$POSTGRES_USER" -d "$SRC" -c "COPY ($2) TO STDOUT (FORMAT binary)" |
         psql -d kbcloud -c "COPY $1 FROM STDIN (FORMAT binary)"
 }
-refs="SELECT * FROM chunk_refs WHERE source = ANY($keep_sql)"
+# WHERE="..." (a condition on chunk_refs) replaces the KEEP filter, e.g. to keep only some man-page sections
+refs="SELECT * FROM chunk_refs WHERE ${WHERE:-source = ANY($keep_sql)}"
 copy entities   "SELECT * FROM entities WHERE id IN (SELECT entity_id FROM ($refs) r)"
 copy "bodies (id, hash, body, flags, trust)" "SELECT id, hash, body, flags, trust FROM bodies WHERE id IN (SELECT body_id FROM ($refs) r)"
 copy chunk_refs "$refs"

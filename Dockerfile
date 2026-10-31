@@ -18,5 +18,6 @@ COPY kb_web kb_web
 RUN useradd --system --uid 10001 app && chown -R app /app/models
 USER app
 EXPOSE 8000
-# one worker (the model and vector codes are loaded once per process; free hosts give 512 MB), threads for concurrency
-CMD ["sh", "-c", "exec gunicorn kb_web.wsgi:app --bind 0.0.0.0:${PORT:-8000} --workers 1 --threads 4 --timeout 120 --access-logfile -"]
+# bootstrap: tables + bundled seed data on a fresh database (a no-op afterwards); then one worker (the model and vector
+# codes are loaded once per process; free hosts give 512 MB), threads for concurrency
+CMD ["sh", "-c", "KB_WARMUP=0 flask --app kb_web.wsgi bootstrap && exec gunicorn kb_web.wsgi:app --bind 0.0.0.0:${PORT:-8000} --workers 1 --threads 4 --timeout 120 --access-logfile -"]

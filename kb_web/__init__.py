@@ -1,4 +1,5 @@
 """DocSearch web app: Flask + SQLAlchemy front end for the PostgreSQL hybrid-search knowledge base."""
+import gzip
 import logging
 import os
 import threading
@@ -15,6 +16,7 @@ from .models import User, db
 
 HERE = Path(__file__).resolve().parent
 KB_SQL = HERE.parent / "knowledge_base" / "sql"
+SEED = HERE / "seed" / "docs.sql.gz"   # built by scripts/export_seed.sh
 login_manager = LoginManager()
 csrf = CSRFProtect()
 
@@ -92,6 +94,22 @@ def apply_sql(path):
         raw.close()
 
 
+def load_seed(cur, path):
+    """Stream a gzipped `pg_dump --data-only` file (COPY format) into the database line by line, so memory stays flat
+    (reading it whole needed ~480 MB, more than a free 512 MB instance has). COPY blocks go through cur.copy();
+    every other line is a one-line SET/SELECT statement; psql meta-commands (\\restrict) are skipped."""
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("COPY "):
+                with cur.copy(line.rstrip().removesuffix(";").replace(" FROM stdin", " FROM STDIN")) as cp:
+                    for row in fh:
+                        if row == "\\.\n":
+                            break
+                        cp.write(row)
+            elif line.strip() and not line.startswith(("--", "\\")):
+                cur.execute(line)
+
+
 def register_cli(app):
     @app.cli.command("init-db")
     @click.option("--with-kb-schema", is_flag=True, help="Also create the knowledge-base tables (empty database, tests/CI).")
@@ -116,3 +134,38 @@ def register_cli(app):
         db.session.add(u)
         db.session.commit()
         click.echo(f"admin {u.username} created")
+
+    @app.cli.command("bootstrap")
+    def bootstrap():
+        """First-start setup for a fresh hosted database, safe to run on every start: create every table, load the bundled
+        seed data if the knowledge base is empty, and create the admin from ADMIN_USERNAME/ADMIN_EMAIL/ADMIN_PASSWORD
+        if no admin exists yet."""
+        for f in ("schema.sql", "002_links.sql", "003_vec_quant.sql", "004_lookup_indexes.sql", "005_term_df.sql"):
+            apply_sql(KB_SQL / f)
+        # the seed goes in before 001_web.sql creates the audit trigger, so it is not logged as thousands of edits
+        empty = db.session.execute(text("SELECT NOT EXISTS (SELECT 1 FROM chunk_refs)")).scalar()
+        db.session.rollback()   # hold no locks while the seed and the DDL below run on other connections
+        if empty and SEED.exists():
+            raw = db.engine.raw_connection()
+            try:
+                with raw.cursor() as cur:
+                    load_seed(cur, SEED)
+                    cur.execute("SET search_path = public")
+                    cur.execute("SELECT setval('chunks_id_seq', greatest((SELECT max(id) FROM chunk_refs), (SELECT max(id) FROM bodies)))")
+                    cur.execute("SELECT setval('entities_id_seq', (SELECT max(id) FROM entities))")
+                    cur.execute("TRUNCATE term_df; INSERT INTO term_df SELECT word, ndoc FROM ts_stat('SELECT tsv FROM bodies')")
+                raw.commit()   # all of the seed or none of it
+            finally:
+                raw.close()
+            click.echo("seed data loaded")
+        apply_sql(HERE / "sql" / "001_web.sql")
+        name, email, pw = (os.environ.get(k, "") for k in ("ADMIN_USERNAME", "ADMIN_EMAIL", "ADMIN_PASSWORD"))
+        if name and pw and not db.session.query(User.id).filter_by(role="admin").first():
+            if len(pw) < 10:
+                raise click.ClickException("ADMIN_PASSWORD must be at least 10 characters")
+            u = User(username=name.lower(), email=(email or f"{name}@example.com").lower(), role="admin")
+            u.set_password(pw)
+            db.session.add(u)
+            db.session.commit()
+            click.echo(f"admin {u.username} created")
+        click.echo("bootstrap done")
