@@ -38,7 +38,7 @@ def healthz():
     return {"status": "ok"}
 
 
-@bp.route("/")
+@bp.route("/dashboard")
 @login_required
 def dashboard():
     stats = source_stats()
@@ -95,7 +95,7 @@ def search():
                            total=len(hits), ms=ms, error=error, marked=marked, offset=(page - 1) * per)
 
 
-@bp.route("/api/search")
+@bp.route("/api/passages")
 @login_required
 def api_search():
     q = request.args.get("q", "").strip()
@@ -208,7 +208,7 @@ def passage_new(entity_id):
     form = PassageForm()
     if form.validate_on_submit():
         try:
-            new = kbsearch.add_passage(e.id, e.name, form.section.data.strip(), form.text.data)
+            new, _ = kbsearch.add_passage(e.id, e.name, form.section.data.strip(), form.text.data)
         except Exception:
             log.exception("adding a passage to entity %s failed", e.id)
             flash("Could not add the passage; nothing was saved.", "error")

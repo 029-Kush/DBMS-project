@@ -45,7 +45,7 @@ def test_login_wrong_password_and_disabled_account(app, client):
 
 
 def test_pages_need_login(client):
-    for path in ("/", "/search?q=x", "/entities", "/bookmarks", "/admin/users"):
+    for path in ("/", "/dashboard", "/api/meta", "/search?q=x", "/entities", "/bookmarks", "/admin/users"):
         r = client.get(path)
         assert r.status_code == 302 and "/login" in r.headers["Location"], path
 
@@ -126,5 +126,5 @@ def test_search_logs_and_injection_text_is_inert(app, client, monkeypatch):
 def test_dashboard_renders(app, client):
     add_entity_with_passage(app)
     make_user(app, "vic"); login(client, "vic")
-    r = client.get("/")
+    r = client.get("/dashboard")
     assert r.status_code == 200 and b"Passages by source" in r.data

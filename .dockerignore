@@ -7,6 +7,9 @@
 **/.venv
 **/venv
 selfheal_pgvector
+!selfheal_pgvector/explorer/static
+!selfheal_pgvector/explorer/readable.py
+!selfheal_pgvector/explorer/hnsw_trace.py
 demo
 *.pdf
 *.pptx

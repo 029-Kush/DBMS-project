@@ -14,6 +14,9 @@ RUN python -c "from fastembed import TextEmbedding; TextEmbedding('sentence-tran
 COPY knowledge_base/scripts knowledge_base/scripts
 COPY knowledge_base/sql knowledge_base/sql
 COPY kb_web kb_web
+# the explorer page and the two modules it needs (3-D map UI, traced HNSW, display formatting)
+COPY selfheal_pgvector/explorer/static selfheal_pgvector/explorer/static
+COPY selfheal_pgvector/explorer/readable.py selfheal_pgvector/explorer/hnsw_trace.py selfheal_pgvector/explorer/
 
 RUN useradd --system --uid 10001 app && chown -R app /app/models
 USER app

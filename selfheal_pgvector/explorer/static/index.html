@@ -791,7 +791,8 @@ $('cb').onclick = e => {
     META = m; P = p; cx = W/2; P.flag = new Array(p.xyz.length).fill(0); P.born = new Array(p.xyz.length).fill(-1e9); renderCol();
     $('stale').style.display = m.stale ? 'block' : 'none';
     const sg = $('sugg'); m.suggestions.forEach(s => { const b = document.createElement('button'); b.textContent = s; b.onclick = () => { $('q').value = s; submit(); }; sg.appendChild(b); });
-    $('legend').innerHTML = Object.entries(TOPIC).map(([k,c]) => `<span><i style="background:${c}"></i>${esc(SRC[k]||k)}</span>`).join('');
+    const present = new Set(P.category);   // only the sources this database actually holds
+    $('legend').innerHTML = Object.entries(TOPIC).filter(([k]) => present.has(k)).map(([k,c]) => `<span><i style="background:${c}"></i>${esc(SRC[k]||k)}</span>`).join('');
     requestAnimationFrame(frame);
     // shareable links: ?q=text  [&step=N freezes mid-search]  [&final=1 jumps to the finished trace]  [&tab=path|checks]
     const u = new URLSearchParams(location.search);

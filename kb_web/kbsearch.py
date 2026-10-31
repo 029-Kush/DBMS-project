@@ -35,7 +35,7 @@ def run(query, limit, source=None, sources=()):
 
 def add_passage(entity_id, entity_name, section, text, source="user"):
     """Insert one passage in a single transaction: the text (stored once per distinct body), its vector codes and the
-    chunk_refs row. Returns True if it was new. Embedding happens before the transaction opens."""
+    chunk_refs row. Returns (True if the passage was new, the text's bodies.id). Embedding happens before the transaction opens."""
     engine()
     common = sys.modules["common"]
     text = text.strip()
@@ -44,5 +44,7 @@ def add_passage(entity_id, entity_name, section, text, source="user"):
     with _lock, common.connect() as conn:          # psycopg: commit on success, rollback on any exception
         with conn.transaction():
             cur = conn.cursor()
-            return common.store_chunk(cur, entity_id, section, source, None, 3, False, text,
-                                      sorted(set(common.extract_flags(text))), h, vec) == 1
+            new = common.store_chunk(cur, entity_id, section, source, None, 3, False, text,
+                                     sorted(set(common.extract_flags(text))), h, vec) == 1
+            cur.execute("SELECT id FROM bodies WHERE hash = %s", (hashlib.md5(text.encode()).digest(),))
+            return new, cur.fetchone()[0]

@@ -4,6 +4,6 @@
 <h1>{{ {400: "Bad request", 403: "Not allowed", 404: "Not found", 500: "Something went wrong"}[code] }}</h1>
 <div class="panel">
   <p>{% if code == 403 %}Your role does not allow this action.{% elif code == 404 %}That page or record does not exist.{% elif code == 400 %}The request was invalid or the form expired. Go back and try again.{% else %}The error was logged. Please try again.{% endif %}</p>
-  <p><a href="{{ url_for('main.dashboard') }}">Back to the dashboard</a></p>
+  <p><a href="{{ url_for('explorer.home') }}">Back to the explorer</a></p>
 </div>
 {% endblock %}
