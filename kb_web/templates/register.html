@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<h1>Create an account</h1>
+<form method="post" class="panel form" novalidate>
+  {{ form.hidden_tag() }}
+  {{ field(form.username, autocomplete="username", autofocus=true) }}
+  {{ field(form.email, autocomplete="email") }}
+  {{ field(form.password, autocomplete="new-password") }}
+  {{ field(form.confirm, autocomplete="new-password") }}
+  <p><button>Register</button></p>
+</form>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<h1>Search</h1>
+<form class="panel row" method="get">
+  <input type="search" name="q" value="{{ q }}" maxlength="300" placeholder="e.g. find files changed in the last day" aria-label="Query" autofocus>
+  <select name="source" aria-label="Source">
+    <option value="">All sources</option>
+    {% for s in sources %}<option value="{{ s }}" {{ 'selected' if s == source }}>{{ s }}</option>{% endfor %}
+  </select>
+  <button>Search</button>
+</form>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+{% if q and not error %}
+  <p class="muted">{{ total }} ranked passages{% if total == config.SEARCH_MAX %} (top {{ total }} shown){% endif %} · {{ ms }} ms.
+     Ranking fuses exact flag, keyword and vector matches (reciprocal rank fusion); the lanes that found each passage are listed.</p>
+  {% for h in hits %}
+  <div class="hit">
+    <h3>{{ offset + loop.index }}. <a href="{{ url_for('main.entities', q=h[1]) }}">{{ h[1] }}</a> · {{ h[2] }}</h3>
+    <div class="meta"><span class="tag">{{ h[3] }}</span> {{ h[4] or '' }} · score {{ '%.4f'|format(h[7]) }} · via {{ h[8]|join(', ') }}
+      {% if h[6] %}· same text in {{ h[6][:4]|join(', ') }}{% if h[6]|length > 4 %} +{{ h[6]|length - 4 }}{% endif %}{% endif %}</div>
+    <pre>{{ h[5] }}</pre>
+    {% if h[0] in marked %}<span class="muted">Bookmarked</span>{% else %}
+    <form method="post" action="{{ url_for('main.bookmark_add') }}" class="row">{{ csrf() }}
+      <input type="hidden" name="chunk_id" value="{{ h[0] }}">
+      <input type="text" name="note" maxlength="500" placeholder="Optional note" style="flex:1 1 200px;width:auto">
+      <button class="link">Bookmark</button>
+    </form>{% endif %}
+  </div>
+  {% else %}<p>No results.</p>{% endfor %}
+  {% if pages > 1 %}<div class="pager">
+    {% for p in range(1, pages + 1) %}{% if p == page %}<span class="cur">{{ p }}</span>{% else %}<a href="{{ url_for('main.search', q=q, source=source, page=p) }}">{{ p }}</a>{% endif %}{% endfor %}
+  </div>{% endif %}
+{% endif %}
+{% endblock %}

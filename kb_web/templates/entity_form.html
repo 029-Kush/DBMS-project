@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}{{ 'Edit ' ~ e.name if e else 'New entity' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Edit ' ~ e.name if e else 'New entity' }}</h1>
+<form method="post" class="panel form" novalidate>
+  {{ form.hidden_tag() }}
+  {{ field(form.name) }}{{ field(form.type) }}{{ field(form.aliases) }}{{ field(form.version) }}{{ field(form.summary) }}
+  <p class="row"><button>Save</button><a href="{{ url_for('main.entity', entity_id=e.id) if e else url_for('main.entities') }}">Cancel</a></p>
+</form>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% from "_macros.html" import pager, csrf %}
+{% block title %}{{ e.name }}{% endblock %}
+{% block content %}
+<h1>{{ e.name }} <span class="tag">{{ e.type }}</span></h1>
+<div class="panel">
+  <p>{{ e.summary or 'No summary.' }}</p>
+  <p class="muted">id {{ e.id }}{% if e.version %} · version {{ e.version }}{% endif %}{% if e.aliases %} · also known as {{ e.aliases[:12]|join(', ') }}{% if e.aliases|length > 12 %} +{{ e.aliases|length - 12 }}{% endif %}{% endif %}</p>
+  {% if current_user.can('editor') %}<div class="row">
+    <a class="btn" href="{{ url_for('main.entity_edit', entity_id=e.id) }}">Edit</a>
+    <a class="btn ghost" href="{{ url_for('main.passage_new', entity_id=e.id) }}">Add passage</a>
+    {% if current_user.can('admin') %}
+    <form method="post" action="{{ url_for('main.entity_delete', entity_id=e.id) }}" onsubmit="return confirm('Delete {{ e.name|e }} and its passages?')">{{ csrf() }}<button class="danger">Delete</button></form>
+    {% endif %}</div>{% endif %}
+</div>
+<h2>Passages</h2>
+{% for c in pg.items %}
+<div class="hit">
+  <h3>{{ c.section }}</h3>
+  <div class="meta"><span class="tag">{{ c.source }}</span> {{ c.source_version or '' }} · passage {{ c.id }} · text {{ c.body_id }}</div>
+  <pre>{{ c.body.body }}</pre>
+  <form method="post" action="{{ url_for('main.bookmark_add') }}" class="row">{{ csrf() }}
+    <input type="hidden" name="chunk_id" value="{{ c.id }}"><input type="hidden" name="note" value=""><button class="link">Bookmark</button></form>
+</div>
+{% else %}<p class="muted">No passages yet.</p>{% endfor %}
+{{ pager(pg, 'main.entity', entity_id=e.id) }}
+{% endblock %}

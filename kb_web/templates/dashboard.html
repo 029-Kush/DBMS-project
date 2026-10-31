@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="grid">
+  <div class="panel stat"><b>{{ "{:,}".format(totals.entities) }}</b><span>entities</span></div>
+  <div class="panel stat"><b>{{ "{:,}".format(totals.passages) }}</b><span>passages</span></div>
+  <div class="panel stat"><b>{{ "{:,}".format(totals.texts) }}</b><span>distinct texts (stored once)</span></div>
+  <div class="panel stat"><b>{{ n_bookmarks }}</b><span>your bookmarks</span></div>
+</div>
+<form class="panel row" action="{{ url_for('main.search') }}">
+  <input type="search" name="q" placeholder="Ask in plain words or type a command / flag, e.g. tar extract to a folder" aria-label="Search">
+  <button>Search</button>
+</form>
+<div class="grid2">
+  <div class="panel">
+    <h2 style="margin-top:0">Passages by source</h2>
+    <div class="scroll"><table>
+      <tr><th>Source</th><th class="num">Passages</th><th class="num hide-sm">Texts</th><th class="num hide-sm">Avg chars</th><th style="width:30%"></th></tr>
+      {% set maxp = stats[0].passages if stats else 1 %}
+      {% for r in stats %}
+      <tr><td>{{ r.source }}</td><td class="num">{{ "{:,}".format(r.passages) }}</td><td class="num hide-sm">{{ "{:,}".format(r.distinct_texts) }}</td>
+          <td class="num hide-sm">{{ r.avg_chars|int }}</td><td><div class="bar" style="width:{{ (100 * r.passages / maxp)|round(1) }}%"></div></td></tr>
+      {% endfor %}
+    </table></div>
+  </div>
+  <div class="panel">
+    <h2 style="margin-top:0">Searches per day (all users, last 14 days)</h2>
+    <div class="bars" role="img" aria-label="searches per day">
+      {% for d in daily %}<div title="{{ d.day }}: {{ d.n }}" style="height:{{ (100 * d.n / max_day)|round(1) }}%"></div>{% endfor %}
+    </div>
+    <p class="muted">{{ daily[0].day }} – {{ daily[-1].day }} · total {{ daily|sum(attribute='n') }}</p>
+  </div>
+</div>
+<div class="grid2">
+  <div class="panel">
+    <h2 style="margin-top:0">Top queries this week</h2>
+    {% if top %}<table><tr><th>Query</th><th class="num">Runs</th><th class="num">Avg ms</th></tr>
+      {% for t in top %}<tr><td><a href="{{ url_for('main.search', q=t.query) }}">{{ t.query }}</a></td><td class="num">{{ t.n }}</td><td class="num">{{ t.ms|int }}</td></tr>{% endfor %}
+    </table>{% else %}<p class="muted">No searches yet.</p>{% endif %}
+  </div>
+  <div class="panel">
+    <h2 style="margin-top:0">Your recent searches</h2>
+    {% if mine %}<table>{% for s in mine %}<tr><td><a href="{{ url_for('main.search', q=s.query) }}">{{ s.query }}</a></td>
+      <td class="num muted">{{ s.n_results }} hits · {{ s.latency_ms }} ms</td></tr>{% endfor %}</table>
+    {% else %}<p class="muted">None yet.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}
