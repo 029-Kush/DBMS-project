@@ -46,7 +46,10 @@ def create_app(overrides=None):
 
     from .admin import bp as admin_bp
     from .auth import bp as auth_bp
+    from .explorer import bp as explorer_bp
     from .main import bp as main_bp
+    csrf.exempt(explorer_bp)   # its POSTs are JSON-only (checked per view) and need login; SameSite=Lax cookies
+    app.register_blueprint(explorer_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
@@ -67,9 +70,10 @@ def create_app(overrides=None):
 
 
 def _warm_up():
-    from . import kbsearch
+    from . import explorer, kbsearch
     try:
         kbsearch.run("warm up", limit=1)
+        explorer.state()
     except Exception:
         logging.getLogger(__name__).exception("search warm-up failed")
 

@@ -32,7 +32,7 @@ def role_required(role):
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("explorer.home"))
     form = RegisterForm()
     if form.validate_on_submit():
         username, email = form.username.data.lower(), form.email.data.strip().lower()
@@ -52,7 +52,7 @@ def register():
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("explorer.home"))
     form = LoginForm()
     if form.validate_on_submit():
         u = db.session.query(User).filter_by(username=form.username.data.strip().lower()).first()
@@ -64,7 +64,7 @@ def login():
             nxt = request.args.get("next", "")
             # only same-site paths: an absolute URL here would be an open redirect
             if not nxt.startswith("/") or nxt.startswith("//") or urlparse(nxt).netloc:
-                nxt = url_for("main.dashboard")
+                nxt = url_for("explorer.home")
             return redirect(nxt)
         flash("Wrong username or password, or the account is disabled.", "error")
     return render_template("login.html", form=form)
